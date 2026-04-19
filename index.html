@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Titan V7.0 - מערכת ניהול תרגול פרימיום</title>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+  <style>
+    :root{
+      --bg:#0b1020; --panel:#121935; --panel2:#1a2347; --text:#eef3ff; --muted:#aeb9d6;
+      --accent:#4fd1c5; --accent2:#60a5fa; --danger:#f59e0b; --border:#2a3566;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;font-family:Arial,sans-serif;background:linear-gradient(135deg,#0b1020,#121a35 45%,#0d1530);
+      color:var(--text);min-height:100vh
+    }
+    .wrap{max-width:1200px;margin:0 auto;padding:24px}
+    .hero{display:grid;gap:16px;margin-bottom:20px}
+    .title{font-size:32px;font-weight:700}
+    .sub{color:var(--muted)}
+    .panel{
+      background:rgba(18,25,53,.92);border:1px solid var(--border);border-radius:18px;
+      padding:18px;box-shadow:0 12px 30px rgba(0,0,0,.25)
+    }
+    .toolbar{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+    .field{display:flex;flex-direction:column;gap:8px}
+    .field label{font-size:14px;color:var(--muted)}
+    input,select{
+      width:100%;padding:12px 14px;border-radius:12px;border:1px solid var(--border);
+      background:var(--panel2);color:var(--text)
+    }
+    input[type=file]{padding:10px}
+    .stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-top:18px}
+    .stat{background:var(--panel2);border:1px solid var(--border);border-radius:16px;padding:16px}
+    .stat .k{font-size:14px;color:var(--muted);margin-bottom:8px}
+    .stat .v{font-size:28px;font-weight:700}
+    .tableWrap{margin-top:18px;overflow:auto}
+    table{width:100%;border-collapse:collapse}
+    th,td{padding:12px 10px;border-bottom:1px solid var(--border);vertical-align:top}
+    th{position:sticky;top:0;background:#162044;text-align:right}
+    tr:hover td{background:rgba(255,255,255,.02)}
+    .badge{
+      display:inline-block;padding:6px 10px;border-radius:999px;background:rgba(79,209,197,.12);
+      border:1px solid rgba(79,209,197,.25);margin:2px;color:#bdfaf2;font-size:12px
+    }
+    .clickable{cursor:pointer;color:#9ad7ff;text-decoration:underline}
+    .expand-row{display:none}
+    .expand-row.active{display:table-row}
+    .empty{
+      margin-top:18px;padding:20px;border-radius:16px;border:1px dashed var(--border);color:var(--muted);
+      text-align:center;background:rgba(255,255,255,.02)
+    }
+    .footerNote{margin-top:12px;color:var(--muted);font-size:13px}
+    @media (max-width:900px){
+      .toolbar,.stats{grid-template-columns:1fr}
+      .title{font-size:24px}
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="hero">
+      <div class="title">Titan V7.0 - מערכת ניהול תרגול פרימיום</div>
+      <div class="sub">העלה קובץ Excel אחד או יותר, והתוצאות יוצגו מייד אוטומטית ללא לחיצה נוספת.</div>
+    </div>
+
+    <div class="panel">
+      <div class="toolbar">
+        <div class="field">
+          <label>העלאת קבצי Excel</label>
+          <input id="fileInput" type="file" accept=".xlsx,.xls,.csv" multiple />
+        </div>
+        <div class="field">
+          <label>בחירת כיתה</label>
+          <select id="classSelector" disabled>
+            <option value="">המתן להעלאה...</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>חיפוש תלמיד</label>
+          <input id="searchName" type="text" placeholder="הקלד שם תלמיד..." />
+        </div>
+        <div class="field">
+          <label>סינון זמן</label>
+          <select id="timeFilter">
+            <option value="all">כולם</option>
+            <option value="low">פחות מ-20 דקות</option>
+            <option value="high">20 דקות ומעלה</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="stats">
+        <div class="stat">
+          <div class="k">מספר תלמידים</div>
+          <div class="v" id="statStudents">0</div>
+        </div>
+        <div class="stat">
+          <div class="k">זמן תרגול ממוצע</div>
+          <div class="v" id="statAvgTime">0:00</div>
+        </div>
+        <div class="stat">
+          <div class="k">פחות מ-20 דקות</div>
+          <div class="v" id="statLowTime">0</div>
+        </div>
+      </div>
+
+      <div id="emptyState" class="empty">אנא העלה קבצי Excel כדי להתחיל.</div>
+
+      <div class="tableWrap">
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>שם תלמיד</th>
+              <th>טווחי זמן</th>
+              <th>זמן נטו</th>
+              <th>מטלות</th>
+            </tr>
+          </thead>
+          <tbody id="tableBody">
+            <tr><td colspan="5">טרם נטענו נתונים.</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="footerNote">המערכת מחשבת זמן נטו לפי פער של 15 דקות בין פעילויות.</div>
+    </div>
+  </div>
+
+  <script>
+    let allClassData = {};
+    const GAP_MINUTES = 15;
+
+    const fileInput = document.getElementById('fileInput');
+    const classSelector = document.getElementById('classSelector');
+    const searchName = document.getElementById('searchName');
+    const timeFilter = document.getElementById('timeFilter');
+    const emptyState = document.getElementById('emptyState');
+
+    fileInput.addEventListener('change', handleFiles);
+    classSelector.addEventListener('change', updateView);
+    searchName.addEventListener('input', filterTable);
+    timeFilter.addEventListener('change', filterTable);
+
+    async function handleFiles(e) {
+      const files = Array.from(e.target.files || []);
+      if (!files.length) return;
+
+      const previousSelection = classSelector.value;
+
+      for (const file of files) {
+        const data = await file.arrayBuffer();
+        const workbook = XLSX.read(data, { type: 'array' });
+        const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+        const json = XLSX.utils.sheet_to_json(firstSheet, { defval: '' });
+
+        const rawContext = json[0]?.['Event context'] || '';
+        const className = rawContext.split('Course: ')[1]?.trim() || file.name.replace(/\.[^.]+$/, '');
+
+        processClassData(className, json);
+      }
+
+      updateClassSelector(previousSelection);
+      e.target.value = '';
+      emptyState.style.display = 'none';
+    }
+
+    function processClassData(className, data) {
+      const users = {};
+
+      data.forEach(row => {
+        const userId = row['User full name'] || row['User ID'] || row['Affected user'] || row['Student'] || '';
+        const timeStr = row['Time'] || row['Date'] || '';
+        const description = row['Description'] || row['Event name'] || row['Component'] || '';
+
+        if (!userId || !timeStr) return;
+
+        if (!users[userId]) {
+          users[userId] = { times: [], tasks: new Set() };
+        }
+
+        const parsedMinutes = parseTimeToMinutes(timeStr);
+        if (parsedMinutes === null) return;
+
+        users[userId].times.push(parsedMinutes);
+
+        const taskName = extractTaskName(description);
+        if (taskName) users[userId].tasks.add(taskName);
+      });
+
+      allClassData[className] = Object.entries(users).map(([name, u]) => {
+        u.times.sort((a,b)=>a-b);
+
+        const ranges = [];
+        if (u.times.length) {
+          let start = u.times[0];
+          let last = u.times[0];
+
+          for (let i = 1; i < u.times.length; i++) {
+            if (u.times[i] - last > GAP_MINUTES) {
+              ranges.push([start, last]);
+              start = u.times[i];
+            }
+            last = u.times[i];
+          }
+          ranges.push([start, last]);
+        }
+
+        return {
+          name,
+          ranges,
+          netTime: ranges.reduce((acc,[s,e]) => acc + (e - s), 0),
+          tasks: Array.from(u.tasks)
+        };
+      }).sort((a,b)=> b.netTime - a.netTime);
+    }
+
+    function parseTimeToMinutes(timeStr) {
+      try {
+        const date = new Date(timeStr);
+        if (!isNaN(date)) return date.getHours() * 60 + date.getMinutes() + date.getSeconds()/60;
+
+        const m = String(timeStr).match(/(\d{1,2}):(\d{2})(?::(\d{2}))?/);
+        if (!m) return null;
+        return parseInt(m[1],10)*60 + parseInt(m[2],10) + (parseInt(m[3]||'0',10)/60);
+      } catch {
+        return null;
+      }
+    }
+
+    function extractTaskName(description) {
+      if (!description) return '';
+      const text = String(description).trim();
+
+      const quiz = text.match(/quiz|attempt|module id\s*\d+/i);
+      if (quiz) return text.slice(0, 80);
+
+      return text ? text.slice(0, 80) : '';
+    }
+
+    function updateClassSelector(preferredClass = '') {
+      const classNames = Object.keys(allClassData);
+      classSelector.innerHTML = '';
+
+      if (!classNames.length) {
+        classSelector.innerHTML = '<option value="">המתן להעלאה...</option>';
+        classSelector.disabled = true;
+        renderTable([]);
+        renderStats([]);
+        emptyState.style.display = 'block';
+        return;
+      }
+
+      classNames.forEach(name => {
+        const opt = document.createElement('option');
+        opt.value = name;
+        opt.textContent = name;
+        classSelector.appendChild(opt);
+      });
+
+      classSelector.disabled = false;
+      classSelector.value = (preferredClass && allClassData[preferredClass]) ? preferredClass : classNames[0];
+      updateView();
+    }
+
+    function updateView() {
+      filterTable();
+    }
+
+    function filterTable() {
+      const className = classSelector.value;
+      const classUsers = allClassData[className] || [];
+      const search = searchName.value.toLowerCase().trim();
+      const tf = timeFilter.value;
+
+      const filtered = classUsers.filter(u =>
+        u.name.toLowerCase().includes(search) &&
+        (tf === 'all' || (tf === 'low' ? u.netTime < 20 : u.netTime >= 20))
+      );
+
+      renderTable(filtered);
+      renderStats(filtered);
+    }
+
+    function renderTable(users) {
+      const tbody = document.getElementById('tableBody');
+      tbody.innerHTML = '';
+
+      if (!users.length) {
+        tbody.innerHTML = '<tr><td colspan="5">לא נמצאו נתונים להצגה.</td></tr>';
+        return;
+      }
+
+      users.forEach((u, i) => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>${i + 1}</td>
+          <td><strong>${escapeHtml(u.name)}</strong></td>
+          <td>${u.ranges.map(r => `<span class="badge">${fmt(r[0])}-${fmt(r[1])}</span>`).join(' ')}</td>
+          <td><strong>${fmtDuration(u.netTime)}</strong></td>
+          <td><span class="clickable" onclick="toggleTasks('t-${i}')">${u.tasks.length} מטלות</span></td>
+        `;
+        tbody.appendChild(row);
+
+        const ex = document.createElement('tr');
+        ex.id = `t-${i}`;
+        ex.className = 'expand-row';
+        ex.innerHTML = `
+          <td colspan="5">
+            <div style="padding:8px 0">
+              ${u.tasks.length ? u.tasks.map(t => `<span class="badge">${escapeHtml(t)}</span>`).join(' ') : 'אין משימות'}
+            </div>
+          </td>
+        `;
+        tbody.appendChild(ex);
+      });
+    }
+
+    function renderStats(users) {
+      document.getElementById('statStudents').textContent = users.length;
+      const avg = users.length ? users.reduce((a,b)=>a+b.netTime,0) / users.length : 0;
+      document.getElementById('statAvgTime').textContent = fmtDuration(avg);
+      document.getElementById('statLowTime').textContent = users.filter(u => u.netTime < 20).length;
+    }
+
+    function fmt(totalMinutes) {
+      const h = Math.floor(totalMinutes / 60);
+      const m = Math.floor(totalMinutes % 60).toString().padStart(2,'0');
+      return `${h}:${m}`;
+    }
+
+    function fmtDuration(totalMinutes) {
+      const h = Math.floor(totalMinutes / 60);
+      const m = Math.round(totalMinutes % 60).toString().padStart(2,'0');
+      return `${h}:${m}`;
+    }
+
+    function toggleTasks(id) {
+      document.getElementById(id)?.classList.toggle('active');
+    }
+
+    function escapeHtml(str) {
+      return String(str)
+        .replaceAll('&','&amp;')
+        .replaceAll('<','&lt;')
+        .replaceAll('>','&gt;')
+        .replaceAll('"','&quot;')
+        .replaceAll("'","&#39;");
+    }
+  </script>
+</body>
+</html>
