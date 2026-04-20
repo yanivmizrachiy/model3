@@ -23,7 +23,7 @@
       background:rgba(18,25,53,.92);border:1px solid var(--border);border-radius:18px;
       padding:18px;box-shadow:0 12px 30px rgba(0,0,0,.25)
     }
-    .toolbar{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:12px}
+    .toolbar{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px}
     .field{display:flex;flex-direction:column;gap:8px}
     .field label{font-size:14px;color:var(--muted)}
     input,select{
@@ -83,16 +83,12 @@
           <input id="searchName" type="text" placeholder="הקלד שם תלמיד..." />
         </div>
         <div class="field">
-  <label>בחירת תאריך</label>
-  <input id="dateFilter" type="date" />
+  <label>מתאריך</label>
+  <input id="fromDate" type="date" />
 </div>
 <div class="field">
-  <label>משעה</label>
-  <input id="timeFrom" type="time" value="00:00" />
-</div>
-<div class="field">
-  <label>עד שעה</label>
-  <input id="timeTo" type="time" value="23:59" />
+  <label>עד תאריך</label>
+  <input id="toDate" type="date" />
 </div>
       </div>
 
@@ -374,17 +370,25 @@ function updateDateFilter() {
   const dates = [...new Set(classUsers.flatMap(u => (u.events || []).map(ev => ev.dateKey)))].sort();
 
   if (!dates.length) {
-    dateFilter.value = '';
-    dateFilter.min = '';
-    dateFilter.max = '';
+    fromDate.value = '';
+    toDate.value = '';
+    fromDate.min = '';
+    fromDate.max = '';
+    toDate.min = '';
+    toDate.max = '';
     return;
   }
 
-  dateFilter.min = dates[0];
-  dateFilter.max = dates[dates.length - 1];
+  fromDate.min = dates[0];
+  fromDate.max = dates[dates.length - 1];
+  toDate.min = dates[0];
+  toDate.max = dates[dates.length - 1];
 
-  if (!dateFilter.value || !dates.includes(dateFilter.value)) {
-    dateFilter.value = dates[dates.length - 1];
+  if (!fromDate.value || !dates.includes(fromDate.value)) {
+    fromDate.value = dates[0];
+  }
+  if (!toDate.value || !dates.includes(toDate.value)) {
+    toDate.value = dates[dates.length - 1];
   }
 }
 
@@ -398,33 +402,31 @@ function filterTable() {
   const className = classSelector.value;
   const classUsers = allClassData[className] || [];
   const search = searchName.value.toLowerCase().trim();
-  const selectedDate = dateFilter.value;
-  const fromMin = toMinutes(timeFrom?.value, 0);
-  const toMin = toMinutes(timeTo?.value, 23 * 60 + 59);
-  const startMin = Math.min(fromMin, toMin);
-  const endMin = Math.max(fromMin, toMin);
+
+  const a = fromDate.value || '';
+  const b = toDate.value || '';
+  const startDate = a && b ? (a <= b ? a : b) : (a || b);
+  const endDate = a && b ? (a <= b ? b : a) : (a || b);
 
   const filtered = classUsers
     .map(u => {
       const dayEvents = (u.events || []).filter(ev => {
-        const sameDate = !selectedDate || ev.dateKey === selectedDate;
-        const inWindow = ev.minutes >= startMin && ev.minutes <= endMin;
-        return sameDate && inWindow;
+        if (!startDate && !endDate) return true;
+        return ev.dateKey >= startDate && ev.dateKey <= endDate;
       });
 
       const dayAnsweredTasks = [...new Map(
         (u.answeredTasks || [])
           .filter(t => {
-            const sameDate = !selectedDate || t.dateKey === selectedDate;
-            const inWindow = t.minutes >= startMin && t.minutes <= endMin;
-            return sameDate && inWindow;
+            if (!startDate && !endDate) return true;
+            return t.dateKey >= startDate && t.dateKey <= endDate;
           })
-          .map(t => [t.name, t])
+          .map(t => [t.name + '|' + t.dateKey, t])
       ).values()].sort((a, b) => a.ts - b.ts);
 
       const ranges = buildRanges(dayEvents);
       const netTime = ranges.reduce((acc, [s, e]) => acc + (e - s), 0);
-      return { ...u, dayEvents, dayAnsweredTasks, ranges, netTime, startMin, endMin };
+      return { ...u, dayEvents, dayAnsweredTasks, ranges, netTime, startDate, endDate };
     })
     .filter(u => u.name.toLowerCase().includes(search) && (u.dayEvents.length > 0 || u.dayAnsweredTasks.length > 0))
     .sort((a, b) => b.netTime - a.netTime || a.name.localeCompare(b.name, 'he'));
@@ -439,7 +441,7 @@ function renderTable(users) {
   tbody.innerHTML = '';
 
   if (!users.length) {
-    tbody.innerHTML = '<tr><td colspan="5">לא נמצאו נתונים להצגה בתאריך ובטווח השעות שנבחרו.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="5">לא נמצאו נתונים להצגה בטווח התאריכים שנבחר.</td></tr>';
     return;
   }
 
@@ -460,7 +462,7 @@ function renderTable(users) {
     ex.innerHTML = `
       <td colspan="5">
         <div style="padding:8px 0">
-          <div style="margin-bottom:10px"><strong>תאריך:</strong> ${escapeHtml(formatDateLabel(dateFilter.value))} | <strong>שעות:</strong> ${escapeHtml(timeFrom.value || '00:00')}-${escapeHtml(timeTo.value || '23:59')}</div>
+          <div style="margin-bottom:10px"><strong>טווח תאריכים:</strong> ${escapeHtml(formatDateLabel(fromDate.value))} - ${escapeHtml(formatDateLabel(toDate.value))}</div>
           <div style="margin-bottom:10px">
             <strong>טווחי זמן:</strong>
             ${u.ranges.length ? u.ranges.map(r => `<span class="badge">${fmt(r[0])}-${fmt(r[1])}</span>`).join(' ') : 'אין טווחים'}
@@ -517,6 +519,7 @@ function escapeHtml(str) {
 </script>
 </body>
 </html>
+
 
 
 
