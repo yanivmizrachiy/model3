@@ -3,36 +3,66 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Titan V7.0 - מערכת ניהול תרגול פרימיום</title>
-  <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+  <title>Titan V8.0 - מערכת ניתוח תרגול יומי</title>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <style>
     :root{
-      --bg:#0b1020; --panel:#121935; --panel2:#1a2347; --text:#eef3ff; --muted:#aeb9d6;
-      --accent:#4fd1c5; --accent2:#60a5fa; --danger:#f59e0b; --border:#2a3566;
+      --bg:#0b1020;
+      --panel:#121935;
+      --panel2:#1a2347;
+      --text:#eef3ff;
+      --muted:#aeb9d6;
+      --accent:#4fd1c5;
+      --accent2:#60a5fa;
+      --border:#2a3566;
     }
     *{box-sizing:border-box}
     body{
-      margin:0;font-family:Arial,sans-serif;background:linear-gradient(135deg,#0b1020,#121a35 45%,#0d1530);
-      color:var(--text);min-height:100vh
+      margin:0;
+      font-family:Arial,sans-serif;
+      background:linear-gradient(135deg,#0b1020,#121a35 45%,#0d1530);
+      color:var(--text);
+      min-height:100vh;
     }
-    .wrap{max-width:1200px;margin:0 auto;padding:24px}
+    .wrap{max-width:1280px;margin:0 auto;padding:24px}
     .hero{display:grid;gap:16px;margin-bottom:20px}
     .title{font-size:32px;font-weight:700}
     .sub{color:var(--muted)}
     .panel{
-      background:rgba(18,25,53,.92);border:1px solid var(--border);border-radius:18px;
-      padding:18px;box-shadow:0 12px 30px rgba(0,0,0,.25)
+      background:rgba(18,25,53,.92);
+      border:1px solid var(--border);
+      border-radius:18px;
+      padding:18px;
+      box-shadow:0 12px 30px rgba(0,0,0,.25);
     }
-    .toolbar{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px}
+    .toolbar{
+      display:grid;
+      grid-template-columns:repeat(5,minmax(0,1fr));
+      gap:12px;
+    }
     .field{display:flex;flex-direction:column;gap:8px}
     .field label{font-size:14px;color:var(--muted)}
     input,select{
-      width:100%;padding:12px 14px;border-radius:12px;border:1px solid var(--border);
-      background:var(--panel2);color:var(--text)
+      width:100%;
+      padding:12px 14px;
+      border-radius:12px;
+      border:1px solid var(--border);
+      background:var(--panel2);
+      color:var(--text);
     }
     input[type=file]{padding:10px}
-    .stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-top:18px}
-    .stat{background:var(--panel2);border:1px solid var(--border);border-radius:16px;padding:16px}
+    .stats{
+      display:grid;
+      grid-template-columns:repeat(3,minmax(0,1fr));
+      gap:12px;
+      margin-top:18px;
+    }
+    .stat{
+      background:var(--panel2);
+      border:1px solid var(--border);
+      border-radius:16px;
+      padding:16px;
+    }
     .stat .k{font-size:14px;color:var(--muted);margin-bottom:8px}
     .stat .v{font-size:28px;font-weight:700}
     .tableWrap{margin-top:18px;overflow:auto}
@@ -41,15 +71,34 @@
     th{position:sticky;top:0;background:#162044;text-align:right}
     tr:hover td{background:rgba(255,255,255,.02)}
     .badge{
-      display:inline-block;padding:6px 10px;border-radius:999px;background:rgba(79,209,197,.12);
-      border:1px solid rgba(79,209,197,.25);margin:2px;color:#bdfaf2;font-size:12px
+      display:inline-block;
+      padding:6px 10px;
+      border-radius:999px;
+      background:rgba(79,209,197,.12);
+      border:1px solid rgba(79,209,197,.25);
+      margin:2px;
+      color:#bdfaf2;
+      font-size:12px;
     }
+    .dayBlock{
+      margin:10px 0;
+      padding:12px;
+      border:1px solid var(--border);
+      border-radius:14px;
+      background:rgba(255,255,255,.02);
+    }
+    .dayTitle{font-weight:700;margin-bottom:8px;color:#d8e6ff}
     .clickable{cursor:pointer;color:#9ad7ff;text-decoration:underline}
     .expand-row{display:none}
     .expand-row.active{display:table-row}
     .empty{
-      margin-top:18px;padding:20px;border-radius:16px;border:1px dashed var(--border);color:var(--muted);
-      text-align:center;background:rgba(255,255,255,.02)
+      margin-top:18px;
+      padding:20px;
+      border-radius:16px;
+      border:1px dashed var(--border);
+      color:var(--muted);
+      text-align:center;
+      background:rgba(255,255,255,.02);
     }
     .footerNote{margin-top:12px;color:var(--muted);font-size:13px}
     @media (max-width:900px){
@@ -61,9 +110,9 @@
 <body>
   <div class="wrap">
     <div class="hero">
-      <div class="title">Titan V7.0 - מערכת ניהול תרגול פרימיום</div>
-      <div class="sub">העלה קובץ Excel אחד או יותר, והתוצאות יוצגו מייד אוטומטית ללא לחיצה נוספת.</div>
-<div id="spaceTitle" class="sub" style="font-size:18px;color:#bdfaf2">מרחב נוכחי: —</div>
+      <div class="title">Titan V8.0 - מערכת ניתוח תרגול יומי</div>
+      <div class="sub">העלה קובץ Excel אחד או יותר, בחר כיתה, ואז סנן לפי טווח תאריכים. החישוב מתבצע בנפרד לכל יממה.</div>
+      <div id="spaceTitle" class="sub" style="font-size:18px;color:#bdfaf2">מרחב נוכחי: —</div>
     </div>
 
     <div class="panel">
@@ -83,27 +132,27 @@
           <input id="searchName" type="text" placeholder="הקלד שם תלמיד..." />
         </div>
         <div class="field">
-  <label>מתאריך</label>
-  <input id="fromDate" type="date" />
-</div>
-<div class="field">
-  <label>עד תאריך</label>
-  <input id="toDate" type="date" />
-</div>
+          <label>מתאריך</label>
+          <input id="fromDate" type="date" />
+        </div>
+        <div class="field">
+          <label>עד תאריך</label>
+          <input id="toDate" type="date" />
+        </div>
       </div>
 
       <div class="stats">
         <div class="stat">
           <div class="k">מספר תלמידים</div>
-          <div class="v" id="statStudents">0</div>
+          <div id="statStudents" class="v">0</div>
         </div>
         <div class="stat">
           <div class="k">זמן תרגול ממוצע</div>
-          <div class="v" id="statAvgTime">0:00</div>
+          <div id="statAvgTime" class="v">0:00</div>
         </div>
         <div class="stat">
           <div class="k">מקטעי לימוד</div>
-          <div class="v" id="statLowTime">0</div>
+          <div id="statSegments" class="v">0</div>
         </div>
       </div>
 
@@ -126,405 +175,443 @@
         </table>
       </div>
 
-      <div class="footerNote">המערכת מחשבת זמן נטו לפי פער של 15 דקות בין פעילויות.</div>
+      <div class="footerNote">המערכת מחשבת זמן נטו לפי פער של 15 דקות בין פעילויות, בנפרד לכל יום.</div>
     </div>
   </div>
 
   <script>
-let allClassData = {};
-const GAP_MINUTES = 15;
+    let allClassData = {};
+    const GAP_MINUTES = 15;
 
-const fileInput = document.getElementById('fileInput');
-const classSelector = document.getElementById('classSelector');
-const searchName = document.getElementById('searchName');
-const emptyState = document.getElementById('emptyState');
-const dateFilter = document.getElementById('dateFilter');
-const timeFrom = document.getElementById('timeFrom');
-const timeTo = document.getElementById('timeTo');
+    const fileInput = document.getElementById('fileInput');
+    const classSelector = document.getElementById('classSelector');
+    const searchName = document.getElementById('searchName');
+    const fromDate = document.getElementById('fromDate');
+    const toDate = document.getElementById('toDate');
+    const emptyState = document.getElementById('emptyState');
+    const tableBody = document.getElementById('tableBody');
 
-fileInput.addEventListener('change', handleFiles);
-classSelector.addEventListener('change', updateView);
-searchName.addEventListener('input', filterTable);
-dateFilter.addEventListener('change', filterTable);
-timeFrom.addEventListener('change', filterTable);
-timeTo.addEventListener('change', filterTable);
+    fileInput.addEventListener('change', handleFiles);
+    classSelector.addEventListener('change', updateView);
+    searchName.addEventListener('input', filterTable);
+    fromDate.addEventListener('change', filterTable);
+    toDate.addEventListener('change', filterTable);
 
-async function handleFiles(e) {
-  const files = Array.from(e.target?.files || []);
-  if (!files.length) {
-    emptyState.style.display = 'block';
-    return;
-  }
+    async function handleFiles(e) {
+      const files = Array.from(e.target?.files || []);
+      if (!files.length) {
+        emptyState.style.display = 'block';
+        return;
+      }
 
-  const previousSelection = classSelector.value;
+      const previousSelection = classSelector.value;
 
-  try {
-    for (const file of files) {
-      const data = await file.arrayBuffer();
-      const workbook = XLSX.read(data, { type: 'array' });
-      const firstSheetName = workbook.SheetNames[0];
-      const firstSheet = workbook.Sheets[firstSheetName];
-      const json = XLSX.utils.sheet_to_json(firstSheet, { defval: '' });
+      try {
+        for (const file of files) {
+          const data = await file.arrayBuffer();
+          const workbook = XLSX.read(data, { type: 'array' });
+          const firstSheetName = workbook.SheetNames[0];
+          const firstSheet = workbook.Sheets[firstSheetName];
+          const json = XLSX.utils.sheet_to_json(firstSheet, { defval: '' });
 
-      if (!json.length) continue;
+          if (!json.length) continue;
 
-      const firstRow = json[0] || {};
-      const rawContext = String(firstRow['הארוע מתייחס ל:'] || firstRow['Event context'] || '').trim();
-      let className = file.name.replace(/\.[^.]+$/, '');
+          const className = file.name.replace(/\.[^.]+$/, '');
+          processClassData(className, json);
+        }
 
-      processClassData(className, json);
+        updateClassSelector(previousSelection);
+        emptyState.style.display = Object.keys(allClassData).length ? 'none' : 'block';
+      } catch (err) {
+        console.error('File load error:', err);
+        alert('הקובץ נבחר אך לא נטען. נסה שוב או העלה קובץ Excel תקין.');
+      } finally {
+        e.target.value = '';
+      }
     }
 
-    updateClassSelector(previousSelection);
-    emptyState.style.display = Object.keys(allClassData).length ? 'none' : 'block';
-  } catch (err) {
-    console.error('File load error:', err);
-    alert('הקובץ נבחר אך לא נטען. נסה שוב או העלה קובץ Excel תקין.');
-  } finally {
-    e.target.value = '';
-  }
-}
+    function processClassData(className, data) {
+      const users = {};
 
-function processClassData(className, data) {
-  const users = {};
+      data.forEach(row => {
+        const userId = String(
+          row['שם מלא'] ||
+          row['משתמש מושפע'] ||
+          row['User full name'] ||
+          row['Affected user'] ||
+          row['Student'] ||
+          ''
+        ).trim();
 
-  data.forEach(row => {
-    const userId = String(
-      row['שם מלא'] ||
-      row['משתמש מושפע'] ||
-      row['User full name'] ||
-      row['Affected user'] ||
-      row['Student'] ||
-      ''
-    ).trim();
+        const timeStr = String(
+          row['זמן'] ||
+          row['Time'] ||
+          row['Date'] ||
+          ''
+        ).trim();
 
-    const timeStr = String(
-      row['זמן'] ||
-      row['Time'] ||
-      row['Date'] ||
-      ''
-    ).trim();
+        const description = String(
+          row['תיאור'] ||
+          row['Description'] ||
+          row['שם האירוע'] ||
+          row['Event name'] ||
+          row['רכיב'] ||
+          row['Component'] ||
+          ''
+        ).trim();
 
-    const description = String(
-      row['תיאור'] ||
-      row['Description'] ||
-      row['שם האירוע'] ||
-      row['Event name'] ||
-      row['רכיב'] ||
-      row['Component'] ||
-      ''
-    ).trim();
+        const eventName = String(
+          row['שם האירוע'] ||
+          row['Event name'] ||
+          ''
+        ).trim();
 
-    const eventName = String(
-      row['שם האירוע'] ||
-      row['Event name'] ||
-      ''
-    ).trim();
+        const contextName = String(
+          row['הארוע מתייחס ל:'] ||
+          row['Event context'] ||
+          ''
+        ).trim();
 
-    const contextName = String(
-      row['הארוע מתייחס ל:'] ||
-      row['Event context'] ||
-      ''
-    ).trim();
+        if (!userId || !timeStr) return;
 
-    if (!userId || !timeStr) return;
+        const parsed = parseDateTimeParts(timeStr);
+        if (!parsed) return;
 
-    const parsed = parseDateTimeParts(timeStr);
-    if (!parsed) return;
+        if (!users[userId]) {
+          users[userId] = { events: [], answeredTasks: [] };
+        }
 
-    if (!users[userId]) {
-      users[userId] = { events: [], tasks: new Set(), answeredTasks: [] };
-    }
+        users[userId].events.push(parsed);
 
-    users[userId].events.push(parsed);
-
-    const taskName = contextName || extractTaskName(description);
-    if (taskName) users[userId].tasks.add(taskName);
-
-    if (
-      contextName &&
-      (
-        /Quiz attempt updated/i.test(eventName) ||
-        /ניסיון המענה על הבוחן הוגש/.test(eventName) ||
-        /שמירה אוטומטית של ניסיון מענה/.test(eventName)
-      )
-    ) {
-      users[userId].answeredTasks.push({ name: contextName, dateKey: parsed.dateKey, minutes: parsed.minutes, ts: parsed.ts });
-    }
-  });
-
-  allClassData[className] = Object.entries(users).map(([name, u]) => ({
-    name,
-    events: u.events.sort((a, b) => a.ts - b.ts),
-    tasks: Array.from(u.tasks),
-    answeredTasks: u.answeredTasks.filter(t => t && t.name).sort((a, b) => a.ts - b.ts)
-  }));
-}
-
-function parseDateTimeParts(timeStr) {
-  try {
-    const txt = String(timeStr).trim();
-    let m = txt.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4}),?\s+(\d{1,2}):(\d{2})(?::(\d{2}))?$/);
-
-    if (m) {
-      const dd = m[1].padStart(2, '0');
-      const mm = m[2].padStart(2, '0');
-      const yyyy = m[3];
-      const hh = parseInt(m[4], 10);
-      const mi = parseInt(m[5], 10);
-      const ss = parseInt(m[6] || '0', 10);
-      return {
-        dateKey: `${yyyy}-${mm}-${dd}`,
-        minutes: hh * 60 + mi + ss / 60,
-        ts: Date.UTC(parseInt(yyyy, 10), parseInt(mm, 10) - 1, parseInt(dd, 10), hh, mi, ss)
-      };
-    }
-
-    const d = new Date(txt);
-    if (isNaN(d)) return null;
-
-    const yyyy = String(d.getFullYear());
-    const mm = String(d.getMonth() + 1).padStart(2, '0');
-    const dd = String(d.getDate()).padStart(2, '0');
-    return {
-      dateKey: `${yyyy}-${mm}-${dd}`,
-      minutes: d.getHours() * 60 + d.getMinutes() + d.getSeconds() / 60,
-      ts: d.getTime()
-    };
-  } catch {
-    return null;
-  }
-}
-
-function extractTaskName(description) {
-  if (!description) return '';
-  const text = String(description).trim();
-  const quiz = text.match(/quiz|attempt|module id\s*\d+/i);
-  if (quiz) return text.slice(0, 80);
-  return text ? text.slice(0, 80) : '';
-}
-
-function toMinutes(value, fallback) {
-  if (!value || !String(value).includes(':')) return fallback;
-  const [h, m] = String(value).split(':').map(Number);
-  return (h * 60) + (m || 0);
-}
-function buildRanges(events) {
-  const minutes = events.map(ev => ev.minutes).sort((a, b) => a - b);
-  const ranges = [];
-
-  if (!minutes.length) return ranges;
-
-  let start = minutes[0];
-  let last = minutes[0];
-
-  for (let i = 1; i < minutes.length; i++) {
-    if (minutes[i] - last > GAP_MINUTES) {
-      ranges.push([start, last]);
-      start = minutes[i];
-    }
-    last = minutes[i];
-  }
-
-  ranges.push([start, last]);
-  return ranges;
-}
-
-function updateClassSelector(preferredClass = '') {
-  const classNames = Object.keys(allClassData);
-  classSelector.innerHTML = '';
-
-  if (!classNames.length) {
-    classSelector.innerHTML = '<option value="">המתן להעלאה...</option>';
-    classSelector.disabled = true;
-    renderTable([]);
-    renderStats([]);
-    emptyState.style.display = 'block';
-    return;
-  }
-
-  classNames.forEach(name => {
-    const opt = document.createElement('option');
-    opt.value = name;
-    opt.textContent = name;
-    classSelector.appendChild(opt);
-  });
-
-  classSelector.disabled = false;
-  classSelector.value = (preferredClass && allClassData[preferredClass]) ? preferredClass : classNames[0];
-  updateView();
-}
-
-function updateSpaceTitle() {
-  const el = document.getElementById('spaceTitle');
-  const className = classSelector.value || '—';
-  if (el) el.textContent = 'מרחב נוכחי: ' + className;
-}
-
-function updateDateFilter() {
-  const className = classSelector.value;
-  const classUsers = allClassData[className] || [];
-  const dates = [...new Set(classUsers.flatMap(u => (u.events || []).map(ev => ev.dateKey)))].sort();
-
-  if (!dates.length) {
-    fromDate.value = '';
-    toDate.value = '';
-    fromDate.min = '';
-    fromDate.max = '';
-    toDate.min = '';
-    toDate.max = '';
-    return;
-  }
-
-  fromDate.min = dates[0];
-  fromDate.max = dates[dates.length - 1];
-  toDate.min = dates[0];
-  toDate.max = dates[dates.length - 1];
-
-  if (!fromDate.value || !dates.includes(fromDate.value)) {
-    fromDate.value = dates[0];
-  }
-  if (!toDate.value || !dates.includes(toDate.value)) {
-    toDate.value = dates[dates.length - 1];
-  }
-}
-
-function updateView() {
-  updateSpaceTitle();
-  updateDateFilter();
-  filterTable();
-}
-
-function filterTable() {
-  const className = classSelector.value;
-  const classUsers = allClassData[className] || [];
-  const search = searchName.value.toLowerCase().trim();
-
-  const a = fromDate.value || '';
-  const b = toDate.value || '';
-  const startDate = a && b ? (a <= b ? a : b) : (a || b);
-  const endDate = a && b ? (a <= b ? b : a) : (a || b);
-
-  const filtered = classUsers
-    .map(u => {
-      const dayEvents = (u.events || []).filter(ev => {
-        if (!startDate && !endDate) return true;
-        return ev.dateKey >= startDate && ev.dateKey <= endDate;
+        if (contextName && isAnsweredEvent(eventName, description)) {
+          users[userId].answeredTasks.push({
+            name: contextName,
+            dateKey: parsed.dateKey,
+            ts: parsed.ts
+          });
+        }
       });
 
-      const dayAnsweredTasks = [...new Map(
-        (u.answeredTasks || [])
-          .filter(t => {
-            if (!startDate && !endDate) return true;
-            return t.dateKey >= startDate && t.dateKey <= endDate;
-          })
-          .map(t => [t.name + '|' + t.dateKey, t])
-      ).values()].sort((a, b) => a.ts - b.ts);
+      allClassData[className] = Object.entries(users).map(([name, u]) => ({
+        name,
+        events: u.events.sort((a, b) => a.ts - b.ts),
+        answeredTasks: dedupeTasks(u.answeredTasks.sort((a, b) => a.ts - b.ts))
+      }));
+    }
 
-      const ranges = buildRanges(dayEvents);
-      const netTime = ranges.reduce((acc, [s, e]) => acc + (e - s), 0);
-      return { ...u, dayEvents, dayAnsweredTasks, ranges, netTime, startDate, endDate };
-    })
-    .filter(u => u.name.toLowerCase().includes(search) && (u.dayEvents.length > 0 || u.dayAnsweredTasks.length > 0))
-    .sort((a, b) => b.netTime - a.netTime || a.name.localeCompare(b.name, 'he'));
+    function isAnsweredEvent(eventName, description) {
+      const text = `${eventName} ${description}`;
+      return (
+        /Quiz attempt updated/i.test(text) ||
+        /ניסיון המענה על הבוחן הוגש/.test(text) ||
+        /שמירה אוטומטית של ניסיון מענה/.test(text) ||
+        /attempt submitted/i.test(text) ||
+        /attempt reviewed/i.test(text)
+      );
+    }
 
-  renderTable(filtered);
-  renderStats(filtered);
-  emptyState.style.display = filtered.length ? 'none' : 'block';
-}
+    function dedupeTasks(tasks) {
+      const seen = new Set();
+      return tasks.filter(t => {
+        const key = `${t.dateKey}|${t.name}`;
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      });
+    }
 
-function renderTable(users) {
-  const tbody = document.getElementById('tableBody');
-  tbody.innerHTML = '';
+    function parseDateTimeParts(timeStr) {
+      try {
+        const txt = String(timeStr).trim();
+        let m = txt.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4}),?\s+(\d{1,2}):(\d{2})(?::(\d{2}))?$/);
 
-  if (!users.length) {
-    tbody.innerHTML = '<tr><td colspan="5">לא נמצאו נתונים להצגה בטווח התאריכים שנבחר.</td></tr>';
-    return;
-  }
+        if (m) {
+          const dd = m[1].padStart(2, '0');
+          const mm = m[2].padStart(2, '0');
+          const yyyy = m[3];
+          const hh = parseInt(m[4], 10);
+          const mi = parseInt(m[5], 10);
+          const ss = parseInt(m[6] || '0', 10);
 
-  users.forEach((u, i) => {
-    const row = document.createElement('tr');
-    row.innerHTML = `
-      <td>${i + 1}</td>
-      <td><strong>${escapeHtml(u.name)}</strong></td>
-      <td><span class="clickable" onclick="toggleTasks('t-${i}')">${u.ranges.length} טווחים</span></td>
-      <td><strong>${fmtDuration(u.netTime)}</strong></td>
-      <td><span class="clickable" onclick="toggleTasks('t-${i}')">${u.dayAnsweredTasks.length} משימות</span></td>
-    `;
-    tbody.appendChild(row);
+          return {
+            dateKey: `${yyyy}-${mm}-${dd}`,
+            minutes: hh * 60 + mi + ss / 60,
+            ts: Date.UTC(parseInt(yyyy, 10), parseInt(mm, 10) - 1, parseInt(dd, 10), hh, mi, ss)
+          };
+        }
 
-    const ex = document.createElement('tr');
-    ex.id = `t-${i}`;
-    ex.className = 'expand-row';
-    ex.innerHTML = `
-      <td colspan="5">
-        <div style="padding:8px 0">
-          <div style="margin-bottom:10px"><strong>טווח תאריכים:</strong> ${escapeHtml(formatDateLabel(fromDate.value))} - ${escapeHtml(formatDateLabel(toDate.value))}</div>
-          <div style="margin-bottom:10px">
-            <strong>טווחי זמן:</strong>
-            ${u.ranges.length ? u.ranges.map(r => `<span class="badge">${fmt(r[0])}-${fmt(r[1])}</span>`).join(' ') : 'אין טווחים'}
-          </div>
-          <div>
-            <strong>משימות שנענו:</strong>
-            ${u.dayAnsweredTasks.length ? u.dayAnsweredTasks.map(t => `<span class="badge">${escapeHtml(t.name)}</span>`).join(' ') : 'אין משימות שנענו'}
-          </div>
-        </div>
-      </td>
-    `;
-    tbody.appendChild(ex);
-  });
-}
+        const d = new Date(txt);
+        if (isNaN(d)) return null;
 
-function renderStats(users) {
-  document.getElementById('statStudents').textContent = users.length;
-  const avg = users.length ? users.reduce((a, b) => a + b.netTime, 0) / users.length : 0;
-  document.getElementById('statAvgTime').textContent = fmtDuration(avg);
-  document.getElementById('statLowTime').textContent = users.reduce((sum, u) => sum + u.ranges.length, 0);
-}
+        const yyyy = String(d.getFullYear());
+        const mm = String(d.getMonth() + 1).padStart(2, '0');
+        const dd = String(d.getDate()).padStart(2, '0');
 
-function fmt(totalMinutes) {
-  const h = Math.floor(totalMinutes / 60);
-  const m = Math.floor(totalMinutes % 60).toString().padStart(2, '0');
-  return `${h}:${m}`;
-}
+        return {
+          dateKey: `${yyyy}-${mm}-${dd}`,
+          minutes: d.getHours() * 60 + d.getMinutes() + d.getSeconds() / 60,
+          ts: d.getTime()
+        };
+      } catch {
+        return null;
+      }
+    }
 
-function fmtDuration(totalMinutes) {
-  const safe = Math.max(0, totalMinutes || 0);
-  const h = Math.floor(safe / 60);
-  const m = Math.round(safe % 60).toString().padStart(2, '0');
-  return `${h}:${m}`;
-}
+    function buildRangesForDay(dayEvents) {
+      const minutes = dayEvents.map(ev => ev.minutes).sort((a, b) => a - b);
+      const ranges = [];
+      if (!minutes.length) return ranges;
 
-function formatDateLabel(dateKey) {
-  if (!dateKey || !dateKey.includes('-')) return '—';
-  const [y, m, d] = dateKey.split('-');
-  return `${d}/${m}/${y}`;
-}
+      let start = minutes[0];
+      let last = minutes[0];
 
-function toggleTasks(id) {
-  document.getElementById(id)?.classList.toggle('active');
-}
+      for (let i = 1; i < minutes.length; i++) {
+        if (minutes[i] - last > GAP_MINUTES) {
+          ranges.push([start, last]);
+          start = minutes[i];
+        }
+        last = minutes[i];
+      }
 
-function escapeHtml(str) {
-  return String(str)
-    .replaceAll('&', '&amp;')
-    .replaceAll('<', '&lt;')
-    .replaceAll('>', '&gt;')
-    .replaceAll('"', '&quot;')
-    .replaceAll("'", '&#39;');
-}
-</script>
+      ranges.push([start, last]);
+      return ranges;
+    }
+
+    function groupEventsByDay(events) {
+      const map = {};
+      for (const ev of events) {
+        if (!map[ev.dateKey]) map[ev.dateKey] = [];
+        map[ev.dateKey].push(ev);
+      }
+      return map;
+    }
+
+    function groupTasksByDay(tasks) {
+      const map = {};
+      for (const t of tasks) {
+        if (!map[t.dateKey]) map[t.dateKey] = [];
+        map[t.dateKey].push(t);
+      }
+      return map;
+    }
+
+    function inDateRange(dateKey, startDate, endDate) {
+      if (!startDate && !endDate) return true;
+      if (startDate && endDate) return dateKey >= startDate && dateKey <= endDate;
+      if (startDate) return dateKey >= startDate;
+      return dateKey <= endDate;
+    }
+
+    function updateClassSelector(preferredClass = '') {
+      const classNames = Object.keys(allClassData);
+      classSelector.innerHTML = '';
+
+      if (!classNames.length) {
+        classSelector.innerHTML = '<option value="">המתן להעלאה...</option>';
+        classSelector.disabled = true;
+        renderTable([]);
+        renderStats([]);
+        emptyState.style.display = 'block';
+        return;
+      }
+
+      classNames.forEach(name => {
+        const opt = document.createElement('option');
+        opt.value = name;
+        opt.textContent = name;
+        classSelector.appendChild(opt);
+      });
+
+      classSelector.disabled = false;
+      classSelector.value = preferredClass && allClassData[preferredClass] ? preferredClass : classNames[0];
+      updateView();
+    }
+
+    function updateSpaceTitle() {
+      const el = document.getElementById('spaceTitle');
+      el.textContent = 'מרחב נוכחי: ' + (classSelector.value || '—');
+    }
+
+    function updateDateInputs() {
+      const className = classSelector.value;
+      const classUsers = allClassData[className] || [];
+      const dates = [...new Set(classUsers.flatMap(u => (u.events || []).map(ev => ev.dateKey)))].sort();
+
+      if (!dates.length) {
+        fromDate.value = '';
+        toDate.value = '';
+        fromDate.min = '';
+        fromDate.max = '';
+        toDate.min = '';
+        toDate.max = '';
+        return;
+      }
+
+      fromDate.min = dates[0];
+      fromDate.max = dates[dates.length - 1];
+      toDate.min = dates[0];
+      toDate.max = dates[dates.length - 1];
+
+      if (!fromDate.value || !dates.includes(fromDate.value)) fromDate.value = dates[0];
+      if (!toDate.value || !dates.includes(toDate.value)) toDate.value = dates[dates.length - 1];
+    }
+
+    function updateView() {
+      updateSpaceTitle();
+      updateDateInputs();
+      filterTable();
+    }
+
+    function filterTable() {
+      const className = classSelector.value;
+      const classUsers = allClassData[className] || [];
+      const search = searchName.value.toLowerCase().trim();
+
+      const a = fromDate.value || '';
+      const b = toDate.value || '';
+      const startDate = a && b ? (a <= b ? a : b) : (a || '');
+      const endDate = a && b ? (a <= b ? b : a) : (b || a || '');
+
+      const filtered = classUsers
+        .map(u => {
+          const selectedEvents = (u.events || []).filter(ev => inDateRange(ev.dateKey, startDate, endDate));
+          const eventsByDay = groupEventsByDay(selectedEvents);
+
+          const dailyBlocks = Object.keys(eventsByDay).sort().map(dateKey => {
+            const ranges = buildRangesForDay(eventsByDay[dateKey]);
+            return { dateKey, ranges };
+          });
+
+          const flatRanges = [];
+          let netTime = 0;
+
+          for (const block of dailyBlocks) {
+            for (const [start, end] of block.ranges) {
+              flatRanges.push({ dateKey: block.dateKey, start, end });
+              netTime += (end - start);
+            }
+          }
+
+          const selectedTasks = (u.answeredTasks || []).filter(t => inDateRange(t.dateKey, startDate, endDate));
+          const tasksByDay = groupTasksByDay(selectedTasks);
+
+          return {
+            ...u,
+            dailyBlocks,
+            flatRanges,
+            netTime,
+            tasksByDay,
+            selectedTasks
+          };
+        })
+        .filter(u =>
+          u.name.toLowerCase().includes(search) &&
+          (u.flatRanges.length > 0 || u.selectedTasks.length > 0)
+        )
+        .sort((a, b) => b.netTime - a.netTime || a.name.localeCompare(b.name, 'he'));
+
+      renderTable(filtered, startDate, endDate);
+      renderStats(filtered);
+      emptyState.style.display = Object.keys(allClassData).length ? 'none' : 'block';
+    }
+
+    function renderTable(users, startDate = '', endDate = '') {
+      tableBody.innerHTML = '';
+
+      if (!users.length) {
+        tableBody.innerHTML = '<tr><td colspan="5">לא נמצאו נתונים להצגה בטווח התאריכים שנבחר.</td></tr>';
+        return;
+      }
+
+      users.forEach((u, i) => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>${i + 1}</td>
+          <td><strong>${escapeHtml(u.name)}</strong></td>
+          <td><span class="clickable" onclick="toggleTasks('t-${i}')">${u.flatRanges.length} טווחים</span></td>
+          <td><strong>${fmtDuration(u.netTime)}</strong></td>
+          <td><span class="clickable" onclick="toggleTasks('t-${i}')">${u.selectedTasks.length} משימות</span></td>
+        `;
+        tableBody.appendChild(row);
+
+        const ex = document.createElement('tr');
+        ex.id = `t-${i}`;
+        ex.className = 'expand-row';
+
+        const dayKeys = [...new Set([
+          ...u.dailyBlocks.map(d => d.dateKey),
+          ...Object.keys(u.tasksByDay)
+        ])].sort();
+
+        const dayHtml = dayKeys.map(dateKey => {
+          const block = u.dailyBlocks.find(d => d.dateKey === dateKey);
+          const dayTasks = u.tasksByDay[dateKey] || [];
+          const rangesHtml = block && block.ranges.length
+            ? block.ranges.map(r => `<span class="badge">${fmt(r[0])}-${fmt(r[1])}</span>`).join(' ')
+            : 'אין טווחים';
+          const tasksHtml = dayTasks.length
+            ? dayTasks.map(t => `<span class="badge">${escapeHtml(t.name)}</span>`).join(' ')
+            : 'אין משימות';
+
+          return `
+            <div class="dayBlock">
+              <div class="dayTitle">${escapeHtml(formatDateLabel(dateKey))}</div>
+              <div style="margin-bottom:8px"><strong>טווחי זמן:</strong> ${rangesHtml}</div>
+              <div><strong>משימות שנענו:</strong> ${tasksHtml}</div>
+            </div>
+          `;
+        }).join('');
+
+        ex.innerHTML = `
+          <td colspan="5">
+            <div style="padding:8px 0">
+              <div style="margin-bottom:10px"><strong>טווח תאריכים:</strong> ${escapeHtml(formatDateLabel(startDate))} - ${escapeHtml(formatDateLabel(endDate))}</div>
+              ${dayHtml}
+            </div>
+          </td>
+        `;
+        tableBody.appendChild(ex);
+      });
+    }
+
+    function renderStats(users) {
+      document.getElementById('statStudents').textContent = users.length;
+      const avg = users.length ? users.reduce((a, b) => a + b.netTime, 0) / users.length : 0;
+      document.getElementById('statAvgTime').textContent = fmtDuration(avg);
+      document.getElementById('statSegments').textContent = users.reduce((sum, u) => sum + u.flatRanges.length, 0);
+    }
+
+    function fmt(totalMinutes) {
+      const h = Math.floor(totalMinutes / 60);
+      const m = Math.floor(totalMinutes % 60).toString().padStart(2, '0');
+      return `${h}:${m}`;
+    }
+
+    function fmtDuration(totalMinutes) {
+      const safe = Math.max(0, totalMinutes || 0);
+      const h = Math.floor(safe / 60);
+      const m = Math.round(safe % 60).toString().padStart(2, '0');
+      return `${h}:${m}`;
+    }
+
+    function formatDateLabel(dateKey) {
+      if (!dateKey || !String(dateKey).includes('-')) return '—';
+      const [y, m, d] = String(dateKey).split('-');
+      return `${d}/${m}/${y}`;
+    }
+
+    function toggleTasks(id) {
+      document.getElementById(id)?.classList.toggle('active');
+    }
+
+    function escapeHtml(str) {
+      return String(str)
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#39;');
+    }
+  </script>
 </body>
 </html>
-
-
-
-
-
-
-
-
-
-
-
-
