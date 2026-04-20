@@ -146,26 +146,43 @@
     timeFilter.addEventListener('change', filterTable);
 
     async function handleFiles(e) {
-      const files = Array.from(e.target.files || []);
-      if (!files.length) return;
+      const files = Array.from(e.target?.files || []);
+      if (!files.length) {
+        emptyState.style.display = 'block';
+        return;
+      }
 
       const previousSelection = classSelector.value;
 
-      for (const file of files) {
-        const data = await file.arrayBuffer();
-        const workbook = XLSX.read(data, { type: 'array' });
-        const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
-        const json = XLSX.utils.sheet_to_json(firstSheet, { defval: '' });
+      try {
+        for (const file of files) {
+          const data = await file.arrayBuffer();
+          const workbook = XLSX.read(data, { type: 'array' });
+          const firstSheetName = workbook.SheetNames[0];
+          const firstSheet = workbook.Sheets[firstSheetName];
+          const json = XLSX.utils.sheet_to_json(firstSheet, { defval: '' });
 
-        const rawContext = json[0]?.['Event context'] || '';
-        const className = rawContext.split('Course: ')[1]?.trim() || file.name.replace(/\.[^.]+$/, '');
+          if (!json.length) continue;
 
-        processClassData(className, json);
+          const firstRow = json[0] || {};
+          const rawContext = String(firstRow['הארוע מתייחס ל:'] || firstRow['Event context'] || '').trim();
+          let className = file.name.replace(/\.[^.]+$/, '');
+
+          if (rawContext) {
+            className = rawContext;
+          }
+
+          processClassData(className, json);
+        }
+
+        updateClassSelector(previousSelection);
+        emptyState.style.display = Object.keys(allClassData).length ? 'none' : 'block';
+      } catch (err) {
+        console.error('File load error:', err);
+        alert('הקובץ נבחר אך לא נטען. נסה שוב או העלה קובץ Excel תקין.');
+      } finally {
+        e.target.value = '';
       }
-
-      updateClassSelector(previousSelection);
-      e.target.value = '';
-      emptyState.style.display = 'none';
     }
 
     function processClassData(className, data) {
@@ -353,5 +370,6 @@
   </script>
 </body>
 </html>
+
 
 
