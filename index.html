@@ -255,7 +255,7 @@ function processClassData(className, data) {
         /שמירה אוטומטית של ניסיון מענה/.test(eventName)
       )
     ) {
-      users[userId].answeredTasks.add(contextName);
+      users[userId].answeredTasks.push({ name: contextName, dateKey: parsed.dateKey, minutes: parsed.minutes, ts: parsed.ts });
     }
   });
 
@@ -263,7 +263,7 @@ function processClassData(className, data) {
     name,
     events: u.events.sort((a, b) => a.ts - b.ts),
     tasks: Array.from(u.tasks),
-    answeredTasks: u.answeredTasks.sort((a, b) => a.ts - b.ts)
+    answeredTasks: u.answeredTasks.filter(t => t && t.name).sort((a, b) => a.ts - b.ts)
   }));
 }
 
@@ -516,6 +516,7 @@ function escapeHtml(str) {
 </script>
 </body>
 </html>
+
 
 
 
