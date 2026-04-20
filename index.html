@@ -23,7 +23,7 @@
       background:rgba(18,25,53,.92);border:1px solid var(--border);border-radius:18px;
       padding:18px;box-shadow:0 12px 30px rgba(0,0,0,.25)
     }
-    .toolbar{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+    .toolbar{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:12px}
     .field{display:flex;flex-direction:column;gap:8px}
     .field label{font-size:14px;color:var(--muted)}
     input,select{
@@ -86,6 +86,14 @@
   <label>בחירת תאריך</label>
   <input id="dateFilter" type="date" />
 </div>
+<div class="field">
+  <label>משעה</label>
+  <input id="timeFrom" type="time" value="00:00" />
+</div>
+<div class="field">
+  <label>עד שעה</label>
+  <input id="timeTo" type="time" value="23:59" />
+</div>
       </div>
 
       <div class="stats">
@@ -135,11 +143,15 @@ const classSelector = document.getElementById('classSelector');
 const searchName = document.getElementById('searchName');
 const emptyState = document.getElementById('emptyState');
 const dateFilter = document.getElementById('dateFilter');
+const timeFrom = document.getElementById('timeFrom');
+const timeTo = document.getElementById('timeTo');
 
 fileInput.addEventListener('change', handleFiles);
 classSelector.addEventListener('change', updateView);
 searchName.addEventListener('input', filterTable);
 dateFilter.addEventListener('change', filterTable);
+timeFrom.addEventListener('change', filterTable);
+timeTo.addEventListener('change', filterTable);
 
 async function handleFiles(e) {
   const files = Array.from(e.target?.files || []);
@@ -227,7 +239,7 @@ function processClassData(className, data) {
     if (!parsed) return;
 
     if (!users[userId]) {
-      users[userId] = { events: [], tasks: new Set(), answeredTasks: new Set() };
+      users[userId] = { events: [], tasks: new Set(), answeredTasks: [] };
     }
 
     users[userId].events.push(parsed);
@@ -251,7 +263,7 @@ function processClassData(className, data) {
     name,
     events: u.events.sort((a, b) => a.ts - b.ts),
     tasks: Array.from(u.tasks),
-    answeredTasks: Array.from(u.answeredTasks)
+    answeredTasks: u.answeredTasks.sort((a, b) => a.ts - b.ts)
   }));
 }
 
@@ -298,6 +310,11 @@ function extractTaskName(description) {
   return text ? text.slice(0, 80) : '';
 }
 
+function toMinutes(value, fallback) {
+  if (!value || !String(value).includes(':')) return fallback;
+  const [h, m] = String(value).split(':').map(Number);
+  return (h * 60) + (m || 0);
+}
 function buildRanges(events) {
   const minutes = events.map(ev => ev.minutes).sort((a, b) => a - b);
   const ranges = [];
@@ -381,15 +398,34 @@ function filterTable() {
   const classUsers = allClassData[className] || [];
   const search = searchName.value.toLowerCase().trim();
   const selectedDate = dateFilter.value;
+  const fromMin = toMinutes(timeFrom?.value, 0);
+  const toMin = toMinutes(timeTo?.value, 23 * 60 + 59);
+  const startMin = Math.min(fromMin, toMin);
+  const endMin = Math.max(fromMin, toMin);
 
   const filtered = classUsers
     .map(u => {
-      const dayEvents = (u.events || []).filter(ev => !selectedDate || ev.dateKey === selectedDate);
+      const dayEvents = (u.events || []).filter(ev => {
+        const sameDate = !selectedDate || ev.dateKey === selectedDate;
+        const inWindow = ev.minutes >= startMin && ev.minutes <= endMin;
+        return sameDate && inWindow;
+      });
+
+      const dayAnsweredTasks = [...new Map(
+        (u.answeredTasks || [])
+          .filter(t => {
+            const sameDate = !selectedDate || t.dateKey === selectedDate;
+            const inWindow = t.minutes >= startMin && t.minutes <= endMin;
+            return sameDate && inWindow;
+          })
+          .map(t => [t.name, t])
+      ).values()].sort((a, b) => a.ts - b.ts);
+
       const ranges = buildRanges(dayEvents);
       const netTime = ranges.reduce((acc, [s, e]) => acc + (e - s), 0);
-      return { ...u, dayEvents, ranges, netTime };
+      return { ...u, dayEvents, dayAnsweredTasks, ranges, netTime, startMin, endMin };
     })
-    .filter(u => u.name.toLowerCase().includes(search) && u.dayEvents.length > 0)
+    .filter(u => u.name.toLowerCase().includes(search) && (u.dayEvents.length > 0 || u.dayAnsweredTasks.length > 0))
     .sort((a, b) => b.netTime - a.netTime || a.name.localeCompare(b.name, 'he'));
 
   renderTable(filtered);
@@ -402,7 +438,7 @@ function renderTable(users) {
   tbody.innerHTML = '';
 
   if (!users.length) {
-    tbody.innerHTML = '<tr><td colspan="5">לא נמצאו נתונים להצגה בתאריך שנבחר.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="5">לא נמצאו נתונים להצגה בתאריך ובטווח השעות שנבחרו.</td></tr>';
     return;
   }
 
@@ -480,6 +516,7 @@ function escapeHtml(str) {
 </script>
 </body>
 </html>
+
 
 
 
