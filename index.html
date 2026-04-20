@@ -3,7 +3,10 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Titan V8.0 - מערכת ניתוח תרגול יומי</title>
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
+  <title>Titan V8.1 - מערכת ניתוח תרגול יומי</title>
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <style>
     :root{
@@ -15,6 +18,7 @@
       --accent:#4fd1c5;
       --accent2:#60a5fa;
       --border:#2a3566;
+      --warn:#f59e0b;
     }
     *{box-sizing:border-box}
     body{
@@ -24,12 +28,13 @@
       color:var(--text);
       min-height:100vh;
     }
-    .wrap{max-width:1280px;margin:0 auto;padding:24px}
-    .hero{display:grid;gap:16px;margin-bottom:20px}
+    .wrap{max-width:1320px;margin:0 auto;padding:24px}
+    .hero{display:grid;gap:14px;margin-bottom:20px}
     .title{font-size:32px;font-weight:700}
     .sub{color:var(--muted)}
+    .build{font-size:13px;color:#8ec5ff}
     .panel{
-      background:rgba(18,25,53,.92);
+      background:rgba(18,25,53,.94);
       border:1px solid var(--border);
       border-radius:18px;
       padding:18px;
@@ -49,11 +54,13 @@
       border:1px solid var(--border);
       background:var(--panel2);
       color:var(--text);
+      outline:none;
     }
+    input:focus,select:focus{border-color:#4f8cff;box-shadow:0 0 0 3px rgba(79,140,255,.15)}
     input[type=file]{padding:10px}
     .stats{
       display:grid;
-      grid-template-columns:repeat(3,minmax(0,1fr));
+      grid-template-columns:repeat(4,minmax(0,1fr));
       gap:12px;
       margin-top:18px;
     }
@@ -65,10 +72,19 @@
     }
     .stat .k{font-size:14px;color:var(--muted);margin-bottom:8px}
     .stat .v{font-size:28px;font-weight:700}
+    .warnBox{
+      margin-top:16px;
+      padding:12px 14px;
+      border:1px solid rgba(245,158,11,.35);
+      background:rgba(245,158,11,.08);
+      border-radius:14px;
+      color:#ffe3a6;
+      display:none;
+    }
     .tableWrap{margin-top:18px;overflow:auto}
     table{width:100%;border-collapse:collapse}
     th,td{padding:12px 10px;border-bottom:1px solid var(--border);vertical-align:top}
-    th{position:sticky;top:0;background:#162044;text-align:right}
+    th{position:sticky;top:0;background:#162044;text-align:right;z-index:2}
     tr:hover td{background:rgba(255,255,255,.02)}
     .badge{
       display:inline-block;
@@ -78,6 +94,16 @@
       border:1px solid rgba(79,209,197,.25);
       margin:2px;
       color:#bdfaf2;
+      font-size:12px;
+    }
+    .badgeTask{
+      display:inline-block;
+      padding:6px 10px;
+      border-radius:999px;
+      background:rgba(96,165,250,.12);
+      border:1px solid rgba(96,165,250,.25);
+      margin:2px;
+      color:#cfe7ff;
       font-size:12px;
     }
     .dayBlock{
@@ -101,7 +127,7 @@
       background:rgba(255,255,255,.02);
     }
     .footerNote{margin-top:12px;color:var(--muted);font-size:13px}
-    @media (max-width:900px){
+    @media (max-width:980px){
       .toolbar,.stats{grid-template-columns:1fr}
       .title{font-size:24px}
     }
@@ -110,9 +136,10 @@
 <body>
   <div class="wrap">
     <div class="hero">
-      <div class="title">Titan V8.0 - מערכת ניתוח תרגול יומי</div>
-      <div class="sub">העלה קובץ Excel אחד או יותר, בחר כיתה, ואז סנן לפי טווח תאריכים. החישוב מתבצע בנפרד לכל יממה.</div>
+      <div class="title">Titan V8.1 - מערכת ניתוח תרגול יומי</div>
+      <div class="sub">העלה קובץ Excel אחד או יותר, בחר כיתה, וסנן רק לפי טווח תאריכים. חישוב הטווחים מתבצע בנפרד לכל יום.</div>
       <div id="spaceTitle" class="sub" style="font-size:18px;color:#bdfaf2">מרחב נוכחי: —</div>
+      <div class="build">Build: 2026-04-20 07:16:07</div>
     </div>
 
     <div class="panel">
@@ -141,6 +168,8 @@
         </div>
       </div>
 
+      <div id="warnBox" class="warnBox"></div>
+
       <div class="stats">
         <div class="stat">
           <div class="k">מספר תלמידים</div>
@@ -153,6 +182,10 @@
         <div class="stat">
           <div class="k">מקטעי לימוד</div>
           <div id="statSegments" class="v">0</div>
+        </div>
+        <div class="stat">
+          <div class="k">סה״כ זמן נטו</div>
+          <div id="statTotalTime" class="v">0:00</div>
         </div>
       </div>
 
@@ -175,13 +208,16 @@
         </table>
       </div>
 
-      <div class="footerNote">המערכת מחשבת זמן נטו לפי פער של 15 דקות בין פעילויות, בנפרד לכל יום.</div>
+      <div class="footerNote">המערכת מחשבת זמן נטו לפי פער של 15 דקות בין פעילויות, בנפרד לכל יום. בחירת הכיתה נלקחת רק משם הקובץ.</div>
     </div>
   </div>
 
   <script>
-    let allClassData = {};
+    const APP_VERSION = "Titan V8.1";
+    const BUILD_STAMP = "2026-04-20 07:16:07";
     const GAP_MINUTES = 15;
+
+    let allClassData = {};
 
     const fileInput = document.getElementById('fileInput');
     const classSelector = document.getElementById('classSelector');
@@ -190,6 +226,7 @@
     const toDate = document.getElementById('toDate');
     const emptyState = document.getElementById('emptyState');
     const tableBody = document.getElementById('tableBody');
+    const warnBox = document.getElementById('warnBox');
 
     fileInput.addEventListener('change', handleFiles);
     classSelector.addEventListener('change', updateView);
@@ -197,116 +234,129 @@
     fromDate.addEventListener('change', filterTable);
     toDate.addEventListener('change', filterTable);
 
+    function showWarn(msg) {
+      warnBox.textContent = msg || '';
+      warnBox.style.display = msg ? 'block' : 'none';
+    }
+
     async function handleFiles(e) {
-      const files = Array.from(e.target?.files || []);
+      const files = Array.from((e.target && e.target.files) || []);
       if (!files.length) {
         emptyState.style.display = 'block';
         return;
       }
 
-      const previousSelection = classSelector.value;
+      showWarn('');
+      allClassData = {};
 
       try {
         for (const file of files) {
           const data = await file.arrayBuffer();
-          const workbook = XLSX.read(data, { type: 'array' });
-          const firstSheetName = workbook.SheetNames[0];
-          const firstSheet = workbook.Sheets[firstSheetName];
-          const json = XLSX.utils.sheet_to_json(firstSheet, { defval: '' });
+          const wb = XLSX.read(data, { type: 'array', cellDates: true });
+          const sheetName = wb.SheetNames[0];
+          const ws = wb.Sheets[sheetName];
+          const rows = XLSX.utils.sheet_to_json(ws, { defval: '', raw: false });
 
-          if (!json.length) continue;
+          if (!rows.length) continue;
 
-          const className = file.name.replace(/\.[^.]+$/, '');
-          processClassData(className, json);
+          const className = String(file.name).replace(/\.[^.]+$/, '').trim();
+          processClassData(className, rows);
         }
 
-        updateClassSelector(previousSelection);
+        updateClassSelector();
         emptyState.style.display = Object.keys(allClassData).length ? 'none' : 'block';
+
+        if (!Object.keys(allClassData).length) {
+          showWarn('הקבצים נטענו, אבל לא נמצאו בהם שורות תקינות לקריאה.');
+        }
       } catch (err) {
-        console.error('File load error:', err);
-        alert('הקובץ נבחר אך לא נטען. נסה שוב או העלה קובץ Excel תקין.');
+        console.error(err);
+        showWarn('אירעה שגיאה בטעינת הקבצים. נסה שוב עם קובצי Excel תקינים.');
       } finally {
-        e.target.value = '';
+        if (e.target) e.target.value = '';
       }
     }
 
-    function processClassData(className, data) {
-      const users = {};
+    function processClassData(className, rows) {
+      const userMap = new Map();
 
-      data.forEach(row => {
-        const userId = String(
-          row['שם מלא'] ||
-          row['משתמש מושפע'] ||
-          row['User full name'] ||
-          row['Affected user'] ||
-          row['Student'] ||
-          ''
-        ).trim();
+      for (const row of rows) {
+        const studentName = firstNonEmpty([
+          row['שם מלא'],
+          row['משתמש מושפע'],
+          row['User full name'],
+          row['Affected user'],
+          row['Student'],
+          row['Full name']
+        ]);
 
-        const timeStr = String(
-          row['זמן'] ||
-          row['Time'] ||
-          row['Date'] ||
-          ''
-        ).trim();
+        const timeValue = firstNonEmpty([
+          row['זמן'],
+          row['Time'],
+          row['Date'],
+          row['תאריך']
+        ]);
 
-        const description = String(
-          row['תיאור'] ||
-          row['Description'] ||
-          row['שם האירוע'] ||
-          row['Event name'] ||
-          row['רכיב'] ||
-          row['Component'] ||
-          ''
-        ).trim();
+        const eventName = firstNonEmpty([
+          row['שם האירוע'],
+          row['Event name']
+        ]);
 
-        const eventName = String(
-          row['שם האירוע'] ||
-          row['Event name'] ||
-          ''
-        ).trim();
+        const description = firstNonEmpty([
+          row['תיאור'],
+          row['Description'],
+          row['רכיב'],
+          row['Component']
+        ]);
 
-        const contextName = String(
-          row['הארוע מתייחס ל:'] ||
-          row['Event context'] ||
-          ''
-        ).trim();
+        const contextName = firstNonEmpty([
+          row['הארוע מתייחס ל:'],
+          row['Event context']
+        ]);
 
-        if (!userId || !timeStr) return;
+        if (!studentName || !timeValue) continue;
 
-        const parsed = parseDateTimeParts(timeStr);
-        if (!parsed) return;
+        const parsed = parseDateTimeParts(timeValue);
+        if (!parsed) continue;
 
-        if (!users[userId]) {
-          users[userId] = { events: [], answeredTasks: [] };
+        if (!userMap.has(studentName)) {
+          userMap.set(studentName, { events: [], answeredTasks: [] });
         }
 
-        users[userId].events.push(parsed);
+        const bucket = userMap.get(studentName);
+        bucket.events.push(parsed);
 
         if (contextName && isAnsweredEvent(eventName, description)) {
-          users[userId].answeredTasks.push({
-            name: contextName,
+          bucket.answeredTasks.push({
+            name: String(contextName).trim(),
             dateKey: parsed.dateKey,
             ts: parsed.ts
           });
         }
-      });
+      }
 
-      allClassData[className] = Object.entries(users).map(([name, u]) => ({
+      allClassData[className] = Array.from(userMap.entries()).map(([name, data]) => ({
         name,
-        events: u.events.sort((a, b) => a.ts - b.ts),
-        answeredTasks: dedupeTasks(u.answeredTasks.sort((a, b) => a.ts - b.ts))
+        events: data.events.sort((a, b) => a.ts - b.ts),
+        answeredTasks: dedupeTasks(data.answeredTasks.sort((a, b) => a.ts - b.ts))
       }));
     }
 
+    function firstNonEmpty(values) {
+      for (const v of values) {
+        if (v !== undefined && v !== null && String(v).trim() !== '') return v;
+      }
+      return '';
+    }
+
     function isAnsweredEvent(eventName, description) {
-      const text = `${eventName} ${description}`;
+      const text = `${eventName || ''} ${description || ''}`.trim();
       return (
         /Quiz attempt updated/i.test(text) ||
-        /ניסיון המענה על הבוחן הוגש/.test(text) ||
-        /שמירה אוטומטית של ניסיון מענה/.test(text) ||
         /attempt submitted/i.test(text) ||
-        /attempt reviewed/i.test(text)
+        /attempt reviewed/i.test(text) ||
+        /ניסיון המענה על הבוחן הוגש/.test(text) ||
+        /שמירה אוטומטית של ניסיון מענה/.test(text)
       );
     }
 
@@ -320,45 +370,62 @@
       });
     }
 
-    function parseDateTimeParts(timeStr) {
+    function parseDateTimeParts(value) {
       try {
-        const txt = String(timeStr).trim();
-        let m = txt.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4}),?\s+(\d{1,2}):(\d{2})(?::(\d{2}))?$/);
-
-        if (m) {
-          const dd = m[1].padStart(2, '0');
-          const mm = m[2].padStart(2, '0');
-          const yyyy = m[3];
-          const hh = parseInt(m[4], 10);
-          const mi = parseInt(m[5], 10);
-          const ss = parseInt(m[6] || '0', 10);
-
-          return {
-            dateKey: `${yyyy}-${mm}-${dd}`,
-            minutes: hh * 60 + mi + ss / 60,
-            ts: Date.UTC(parseInt(yyyy, 10), parseInt(mm, 10) - 1, parseInt(dd, 10), hh, mi, ss)
-          };
+        if (typeof value === 'number' && isFinite(value) && window.XLSX && XLSX.SSF && XLSX.SSF.parse_date_code) {
+          const p = XLSX.SSF.parse_date_code(value);
+          if (p) {
+            return makeParsed(p.y, p.m, p.d, p.H, p.M, Math.floor(p.S || 0));
+          }
         }
 
+        const txt = String(value).trim();
+
+        let m = txt.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4}),?\s+(\d{1,2}):(\d{2})(?::(\d{2}))?$/);
+        if (m) return makeParsed(m[3], m[2], m[1], m[4], m[5], m[6] || 0);
+
+        m = txt.match(/^(\d{4})-(\d{1,2})-(\d{1,2})[ T](\d{1,2}):(\d{2})(?::(\d{2}))?$/);
+        if (m) return makeParsed(m[1], m[2], m[3], m[4], m[5], m[6] || 0);
+
         const d = new Date(txt);
-        if (isNaN(d)) return null;
+        if (!isNaN(d)) {
+          return makeParsed(
+            d.getFullYear(),
+            d.getMonth() + 1,
+            d.getDate(),
+            d.getHours(),
+            d.getMinutes(),
+            d.getSeconds()
+          );
+        }
 
-        const yyyy = String(d.getFullYear());
-        const mm = String(d.getMonth() + 1).padStart(2, '0');
-        const dd = String(d.getDate()).padStart(2, '0');
-
-        return {
-          dateKey: `${yyyy}-${mm}-${dd}`,
-          minutes: d.getHours() * 60 + d.getMinutes() + d.getSeconds() / 60,
-          ts: d.getTime()
-        };
+        return null;
       } catch {
         return null;
       }
     }
 
+    function makeParsed(y, m, d, hh, mm, ss) {
+      const yyyy = String(y).padStart(4, '0');
+      const mon = String(m).padStart(2, '0');
+      const day = String(d).padStart(2, '0');
+      const H = parseInt(hh, 10) || 0;
+      const M = parseInt(mm, 10) || 0;
+      const S = parseInt(ss, 10) || 0;
+
+      return {
+        dateKey: `${yyyy}-${mon}-${day}`,
+        minutes: H * 60 + M + (S / 60),
+        ts: Date.UTC(parseInt(yyyy,10), parseInt(mon,10) - 1, parseInt(day,10), H, M, S)
+      };
+    }
+
     function buildRangesForDay(dayEvents) {
-      const minutes = dayEvents.map(ev => ev.minutes).sort((a, b) => a - b);
+      const minutes = dayEvents
+        .map(ev => ev.minutes)
+        .filter(v => Number.isFinite(v))
+        .sort((a, b) => a - b);
+
       const ranges = [];
       if (!minutes.length) return ranges;
 
@@ -377,20 +444,11 @@
       return ranges;
     }
 
-    function groupEventsByDay(events) {
+    function groupByDay(items) {
       const map = {};
-      for (const ev of events) {
-        if (!map[ev.dateKey]) map[ev.dateKey] = [];
-        map[ev.dateKey].push(ev);
-      }
-      return map;
-    }
-
-    function groupTasksByDay(tasks) {
-      const map = {};
-      for (const t of tasks) {
-        if (!map[t.dateKey]) map[t.dateKey] = [];
-        map[t.dateKey].push(t);
+      for (const item of items) {
+        if (!map[item.dateKey]) map[item.dateKey] = [];
+        map[item.dateKey].push(item);
       }
       return map;
     }
@@ -402,8 +460,8 @@
       return dateKey <= endDate;
     }
 
-    function updateClassSelector(preferredClass = '') {
-      const classNames = Object.keys(allClassData);
+    function updateClassSelector() {
+      const classNames = Object.keys(allClassData).sort((a, b) => a.localeCompare(b, 'he'));
       classSelector.innerHTML = '';
 
       if (!classNames.length) {
@@ -411,25 +469,23 @@
         classSelector.disabled = true;
         renderTable([]);
         renderStats([]);
-        emptyState.style.display = 'block';
         return;
       }
 
-      classNames.forEach(name => {
+      for (const name of classNames) {
         const opt = document.createElement('option');
         opt.value = name;
         opt.textContent = name;
         classSelector.appendChild(opt);
-      });
+      }
 
       classSelector.disabled = false;
-      classSelector.value = preferredClass && allClassData[preferredClass] ? preferredClass : classNames[0];
+      classSelector.value = classNames[0];
       updateView();
     }
 
     function updateSpaceTitle() {
-      const el = document.getElementById('spaceTitle');
-      el.textContent = 'מרחב נוכחי: ' + (classSelector.value || '—');
+      document.getElementById('spaceTitle').textContent = 'מרחב נוכחי: ' + (classSelector.value || '—');
     }
 
     function updateDateInputs() {
@@ -465,7 +521,7 @@
     function filterTable() {
       const className = classSelector.value;
       const classUsers = allClassData[className] || [];
-      const search = searchName.value.toLowerCase().trim();
+      const search = String(searchName.value || '').toLowerCase().trim();
 
       const a = fromDate.value || '';
       const b = toDate.value || '';
@@ -475,7 +531,7 @@
       const filtered = classUsers
         .map(u => {
           const selectedEvents = (u.events || []).filter(ev => inDateRange(ev.dateKey, startDate, endDate));
-          const eventsByDay = groupEventsByDay(selectedEvents);
+          const eventsByDay = groupByDay(selectedEvents);
 
           const dailyBlocks = Object.keys(eventsByDay).sort().map(dateKey => {
             const ranges = buildRangesForDay(eventsByDay[dateKey]);
@@ -486,22 +542,22 @@
           let netTime = 0;
 
           for (const block of dailyBlocks) {
-            for (const [start, end] of block.ranges) {
-              flatRanges.push({ dateKey: block.dateKey, start, end });
-              netTime += (end - start);
+            for (const pair of block.ranges) {
+              flatRanges.push({ dateKey: block.dateKey, start: pair[0], end: pair[1] });
+              netTime += (pair[1] - pair[0]);
             }
           }
 
           const selectedTasks = (u.answeredTasks || []).filter(t => inDateRange(t.dateKey, startDate, endDate));
-          const tasksByDay = groupTasksByDay(selectedTasks);
+          const tasksByDay = groupByDay(selectedTasks);
 
           return {
             ...u,
             dailyBlocks,
             flatRanges,
             netTime,
-            tasksByDay,
-            selectedTasks
+            selectedTasks,
+            tasksByDay
           };
         })
         .filter(u =>
@@ -515,7 +571,7 @@
       emptyState.style.display = Object.keys(allClassData).length ? 'none' : 'block';
     }
 
-    function renderTable(users, startDate = '', endDate = '') {
+    function renderTable(users, startDate, endDate) {
       tableBody.innerHTML = '';
 
       if (!users.length) {
@@ -528,15 +584,15 @@
         row.innerHTML = `
           <td>${i + 1}</td>
           <td><strong>${escapeHtml(u.name)}</strong></td>
-          <td><span class="clickable" onclick="toggleTasks('t-${i}')">${u.flatRanges.length} טווחים</span></td>
+          <td><span class="clickable" onclick="toggleDetails('row-${i}')">${u.flatRanges.length} טווחים</span></td>
           <td><strong>${fmtDuration(u.netTime)}</strong></td>
-          <td><span class="clickable" onclick="toggleTasks('t-${i}')">${u.selectedTasks.length} משימות</span></td>
+          <td><span class="clickable" onclick="toggleDetails('row-${i}')">${u.selectedTasks.length} משימות</span></td>
         `;
         tableBody.appendChild(row);
 
-        const ex = document.createElement('tr');
-        ex.id = `t-${i}`;
-        ex.className = 'expand-row';
+        const details = document.createElement('tr');
+        details.id = `row-${i}`;
+        details.className = 'expand-row';
 
         const dayKeys = [...new Set([
           ...u.dailyBlocks.map(d => d.dateKey),
@@ -545,12 +601,14 @@
 
         const dayHtml = dayKeys.map(dateKey => {
           const block = u.dailyBlocks.find(d => d.dateKey === dateKey);
-          const dayTasks = u.tasksByDay[dateKey] || [];
+          const tasks = u.tasksByDay[dateKey] || [];
+
           const rangesHtml = block && block.ranges.length
             ? block.ranges.map(r => `<span class="badge">${fmt(r[0])}-${fmt(r[1])}</span>`).join(' ')
             : 'אין טווחים';
-          const tasksHtml = dayTasks.length
-            ? dayTasks.map(t => `<span class="badge">${escapeHtml(t.name)}</span>`).join(' ')
+
+          const tasksHtml = tasks.length
+            ? tasks.map(t => `<span class="badgeTask">${escapeHtml(t.name)}</span>`).join(' ')
             : 'אין משימות';
 
           return `
@@ -562,7 +620,7 @@
           `;
         }).join('');
 
-        ex.innerHTML = `
+        details.innerHTML = `
           <td colspan="5">
             <div style="padding:8px 0">
               <div style="margin-bottom:10px"><strong>טווח תאריכים:</strong> ${escapeHtml(formatDateLabel(startDate))} - ${escapeHtml(formatDateLabel(endDate))}</div>
@@ -570,15 +628,19 @@
             </div>
           </td>
         `;
-        tableBody.appendChild(ex);
+        tableBody.appendChild(details);
       });
     }
 
     function renderStats(users) {
+      const total = users.reduce((sum, u) => sum + u.netTime, 0);
+      const avg = users.length ? total / users.length : 0;
+      const segments = users.reduce((sum, u) => sum + u.flatRanges.length, 0);
+
       document.getElementById('statStudents').textContent = users.length;
-      const avg = users.length ? users.reduce((a, b) => a + b.netTime, 0) / users.length : 0;
       document.getElementById('statAvgTime').textContent = fmtDuration(avg);
-      document.getElementById('statSegments').textContent = users.reduce((sum, u) => sum + u.flatRanges.length, 0);
+      document.getElementById('statSegments').textContent = segments;
+      document.getElementById('statTotalTime').textContent = fmtDuration(total);
     }
 
     function fmt(totalMinutes) {
@@ -588,7 +650,7 @@
     }
 
     function fmtDuration(totalMinutes) {
-      const safe = Math.max(0, totalMinutes || 0);
+      const safe = Math.max(0, Number(totalMinutes) || 0);
       const h = Math.floor(safe / 60);
       const m = Math.round(safe % 60).toString().padStart(2, '0');
       return `${h}:${m}`;
@@ -596,13 +658,15 @@
 
     function formatDateLabel(dateKey) {
       if (!dateKey || !String(dateKey).includes('-')) return '—';
-      const [y, m, d] = String(dateKey).split('-');
-      return `${d}/${m}/${y}`;
+      const parts = String(dateKey).split('-');
+      return `${parts[2]}/${parts[1]}/${parts[0]}`;
     }
 
-    function toggleTasks(id) {
-      document.getElementById(id)?.classList.toggle('active');
+    function toggleDetails(id) {
+      const el = document.getElementById(id);
+      if (el) el.classList.toggle('active');
     }
+    window.toggleDetails = toggleDetails;
 
     function escapeHtml(str) {
       return String(str)
