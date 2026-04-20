@@ -301,7 +301,7 @@
           <td><strong>${escapeHtml(u.name)}</strong></td>
           <td>${u.ranges.map(r => `<span class="badge">${fmt(r[0])}-${fmt(r[1])}</span>`).join(' ')}</td>
           <td><strong>${fmtDuration(u.netTime)}</strong></td>
-          <td><span class="clickable" onclick="toggleTasks('t-${i}')">${u.tasks.length} מטלות</span></td>
+          <td><span class="clickable" onclick="toggleTasks('t-${i}')">${u.answeredTasks.length} משימות</span></td>
         `;
         tbody.appendChild(row);
 
@@ -311,7 +311,7 @@
         ex.innerHTML = `
           <td colspan="5">
             <div style="padding:8px 0">
-              ${u.tasks.length ? u.tasks.map(t => `<span class="badge">${escapeHtml(t)}</span>`).join(' ') : 'אין משימות'}
+              ${u.answeredTasks.length ? u.answeredTasks.map(t => `<span class="badge">${escapeHtml(t)}</span>`).join(' ') : 'אין משימות שנענו'}
             </div>
           </td>
         `;
@@ -353,4 +353,5 @@
   </script>
 </body>
 </html>
+
 
