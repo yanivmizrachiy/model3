@@ -63,6 +63,7 @@
     <div class="hero">
       <div class="title">Titan V7.0 - מערכת ניהול תרגול פרימיום</div>
       <div class="sub">העלה קובץ Excel אחד או יותר, והתוצאות יוצגו מייד אוטומטית ללא לחיצה נוספת.</div>
+<div id="spaceTitle" class="sub" style="font-size:18px;color:#bdfaf2">מרחב נוכחי: —</div>
     </div>
 
     <div class="panel">
@@ -116,7 +117,7 @@
               <th>שם תלמיד</th>
               <th>טווחי זמן</th>
               <th>זמן נטו</th>
-              <th>מטלות</th>
+              <th>משימות שענה עליהן</th>
             </tr>
           </thead>
           <tbody id="tableBody">
@@ -178,7 +179,7 @@
         if (!userId || !timeStr) return;
 
         if (!users[userId]) {
-          users[userId] = { times: [], tasks: new Set() };
+          users[userId] = { times: [], tasks: new Set(), answeredTasks: new Set() };
         }
 
         const parsedMinutes = parseTimeToMinutes(timeStr);
@@ -212,7 +213,7 @@
           name,
           ranges,
           netTime: ranges.reduce((acc,[s,e]) => acc + (e - s), 0),
-          tasks: Array.from(u.tasks)
+          tasks: Array.from(u.tasks), answeredTasks: Array.from(u.answeredTasks)
         };
       }).sort((a,b)=> b.netTime - a.netTime);
     }
@@ -352,3 +353,4 @@
   </script>
 </body>
 </html>
+
