@@ -172,9 +172,6 @@ async function handleFiles(e) {
       const rawContext = String(firstRow['הארוע מתייחס ל:'] || firstRow['Event context'] || '').trim();
       let className = file.name.replace(/\.[^.]+$/, '');
 
-      const looksLikeTask = /^\\s*(בוחן|מטלה|quiz|assignment)\\s*:/i.test(rawContext);
-      if (rawContext && !looksLikeTask) className = rawContext;
-
       processClassData(className, json);
     }
 
@@ -519,6 +516,7 @@ function escapeHtml(str) {
 </script>
 </body>
 </html>
+
 
 
 
