@@ -83,13 +83,9 @@
           <input id="searchName" type="text" placeholder="הקלד שם תלמיד..." />
         </div>
         <div class="field">
-          <label>סינון זמן</label>
-          <select id="timeFilter">
-            <option value="all">כולם</option>
-            <option value="low">פחות מ-20 דקות</option>
-            <option value="high">20 דקות ומעלה</option>
-          </select>
-        </div>
+  <label>בחירת תאריך</label>
+  <input id="dateFilter" type="date" />
+</div>
       </div>
 
       <div class="stats">
@@ -102,7 +98,7 @@
           <div class="v" id="statAvgTime">0:00</div>
         </div>
         <div class="stat">
-          <div class="k">פחות מ-20 דקות</div>
+          <div class="k">מקטעי לימוד</div>
           <div class="v" id="statLowTime">0</div>
         </div>
       </div>
@@ -131,288 +127,360 @@
   </div>
 
   <script>
-    let allClassData = {};
-    const GAP_MINUTES = 15;
+let allClassData = {};
+const GAP_MINUTES = 15;
 
-    const fileInput = document.getElementById('fileInput');
-    const classSelector = document.getElementById('classSelector');
-    const searchName = document.getElementById('searchName');
-    const timeFilter = document.getElementById('timeFilter');
-    const emptyState = document.getElementById('emptyState');
+const fileInput = document.getElementById('fileInput');
+const classSelector = document.getElementById('classSelector');
+const searchName = document.getElementById('searchName');
+const emptyState = document.getElementById('emptyState');
+const dateFilter = document.getElementById('dateFilter');
 
-    fileInput.addEventListener('change', handleFiles);
-    classSelector.addEventListener('change', updateView);
-    searchName.addEventListener('input', filterTable);
-    timeFilter.addEventListener('change', filterTable);
+fileInput.addEventListener('change', handleFiles);
+classSelector.addEventListener('change', updateView);
+searchName.addEventListener('input', filterTable);
+dateFilter.addEventListener('change', filterTable);
 
-    async function handleFiles(e) {
-      const files = Array.from(e.target?.files || []);
-      if (!files.length) {
-        emptyState.style.display = 'block';
-        return;
-      }
+async function handleFiles(e) {
+  const files = Array.from(e.target?.files || []);
+  if (!files.length) {
+    emptyState.style.display = 'block';
+    return;
+  }
 
-      const previousSelection = classSelector.value;
+  const previousSelection = classSelector.value;
 
-      try {
-        for (const file of files) {
-          const data = await file.arrayBuffer();
-          const workbook = XLSX.read(data, { type: 'array' });
-          const firstSheetName = workbook.SheetNames[0];
-          const firstSheet = workbook.Sheets[firstSheetName];
-          const json = XLSX.utils.sheet_to_json(firstSheet, { defval: '' });
+  try {
+    for (const file of files) {
+      const data = await file.arrayBuffer();
+      const workbook = XLSX.read(data, { type: 'array' });
+      const firstSheetName = workbook.SheetNames[0];
+      const firstSheet = workbook.Sheets[firstSheetName];
+      const json = XLSX.utils.sheet_to_json(firstSheet, { defval: '' });
 
-          if (!json.length) continue;
+      if (!json.length) continue;
 
-          const firstRow = json[0] || {};
-          const rawContext = String(firstRow['הארוע מתייחס ל:'] || firstRow['Event context'] || '').trim();
-          let className = file.name.replace(/\.[^.]+$/, '');
+      const firstRow = json[0] || {};
+      const rawContext = String(firstRow['הארוע מתייחס ל:'] || firstRow['Event context'] || '').trim();
+      let className = file.name.replace(/\.[^.]+$/, '');
 
-          if (rawContext) {
-            className = rawContext;
-          }
+      if (rawContext) className = rawContext;
 
-          processClassData(className, json);
-        }
-
-        updateClassSelector(previousSelection);
-        emptyState.style.display = Object.keys(allClassData).length ? 'none' : 'block';
-      } catch (err) {
-        console.error('File load error:', err);
-        alert('הקובץ נבחר אך לא נטען. נסה שוב או העלה קובץ Excel תקין.');
-      } finally {
-        e.target.value = '';
-      }
+      processClassData(className, json);
     }
 
-    function processClassData(className, data) {
-      const users = {};
+    updateClassSelector(previousSelection);
+    emptyState.style.display = Object.keys(allClassData).length ? 'none' : 'block';
+  } catch (err) {
+    console.error('File load error:', err);
+    alert('הקובץ נבחר אך לא נטען. נסה שוב או העלה קובץ Excel תקין.');
+  } finally {
+    e.target.value = '';
+  }
+}
 
-      data.forEach(row => {
-        const userId = String(
-          row['שם מלא'] ||
-          row['משתמש מושפע'] ||
-          row['User full name'] ||
-          row['Affected user'] ||
-          row['Student'] ||
-          ''
-        ).trim();
+function processClassData(className, data) {
+  const users = {};
 
-        const timeStr = String(
-          row['זמן'] ||
-          row['Time'] ||
-          row['Date'] ||
-          ''
-        ).trim();
+  data.forEach(row => {
+    const userId = String(
+      row['שם מלא'] ||
+      row['משתמש מושפע'] ||
+      row['User full name'] ||
+      row['Affected user'] ||
+      row['Student'] ||
+      ''
+    ).trim();
 
-        const description = String(
-          row['תיאור'] ||
-          row['Description'] ||
-          row['שם האירוע'] ||
-          row['Event name'] ||
-          row['רכיב'] ||
-          row['Component'] ||
-          ''
-        ).trim();
+    const timeStr = String(
+      row['זמן'] ||
+      row['Time'] ||
+      row['Date'] ||
+      ''
+    ).trim();
 
-        const eventName = String(
-          row['שם האירוע'] ||
-          row['Event name'] ||
-          ''
-        ).trim();
+    const description = String(
+      row['תיאור'] ||
+      row['Description'] ||
+      row['שם האירוע'] ||
+      row['Event name'] ||
+      row['רכיב'] ||
+      row['Component'] ||
+      ''
+    ).trim();
 
-        const contextName = String(
-          row['הארוע מתייחס ל:'] ||
-          row['Event context'] ||
-          ''
-        ).trim();
+    const eventName = String(
+      row['שם האירוע'] ||
+      row['Event name'] ||
+      ''
+    ).trim();
 
-        if (!userId || !timeStr) return;
+    const contextName = String(
+      row['הארוע מתייחס ל:'] ||
+      row['Event context'] ||
+      ''
+    ).trim();
 
-        if (!users[userId]) {
-          users[userId] = { times: [], tasks: new Set(), answeredTasks: new Set() };
-        }
+    if (!userId || !timeStr) return;
 
-        const parsedMinutes = parseTimeToMinutes(timeStr);
-        if (parsedMinutes === null) return;
+    const parsed = parseDateTimeParts(timeStr);
+    if (!parsed) return;
 
-        users[userId].times.push(parsedMinutes);
-
-        const taskName = contextName || extractTaskName(description);
-        if (taskName) users[userId].tasks.add(taskName);
-
-        if (
-          contextName &&
-          (
-            /Quiz attempt updated/i.test(eventName) ||
-            /ניסיון המענה על הבוחן הוגש/.test(eventName) ||
-            /שמירה אוטומטית של ניסיון מענה/.test(eventName)
-          )
-        ) {
-          users[userId].answeredTasks.add(contextName);
-        }
-      });allClassData[className] = Object.entries(users).map(([name, u]) => {
-        u.times.sort((a,b)=>a-b);
-
-        const ranges = [];
-        if (u.times.length) {
-          let start = u.times[0];
-          let last = u.times[0];
-
-          for (let i = 1; i < u.times.length; i++) {
-            if (u.times[i] - last > GAP_MINUTES) {
-              ranges.push([start, last]);
-              start = u.times[i];
-            }
-            last = u.times[i];
-          }
-          ranges.push([start, last]);
-        }
-
-        return {
-          name,
-          ranges,
-          netTime: ranges.reduce((acc,[s,e]) => acc + (e - s), 0),
-          tasks: Array.from(u.tasks), answeredTasks: Array.from(u.answeredTasks)
-        };
-      }).sort((a,b)=> b.netTime - a.netTime);
+    if (!users[userId]) {
+      users[userId] = { events: [], tasks: new Set(), answeredTasks: new Set() };
     }
 
-    function parseTimeToMinutes(timeStr) {
-      try {
-        const date = new Date(timeStr);
-        if (!isNaN(date)) return date.getHours() * 60 + date.getMinutes() + date.getSeconds()/60;
+    users[userId].events.push(parsed);
 
-        const m = String(timeStr).match(/(\d{1,2}):(\d{2})(?::(\d{2}))?/);
-        if (!m) return null;
-        return parseInt(m[1],10)*60 + parseInt(m[2],10) + (parseInt(m[3]||'0',10)/60);
-      } catch {
-        return null;
-      }
+    const taskName = contextName || extractTaskName(description);
+    if (taskName) users[userId].tasks.add(taskName);
+
+    if (
+      contextName &&
+      (
+        /Quiz attempt updated/i.test(eventName) ||
+        /ניסיון המענה על הבוחן הוגש/.test(eventName) ||
+        /שמירה אוטומטית של ניסיון מענה/.test(eventName)
+      )
+    ) {
+      users[userId].answeredTasks.add(contextName);
+    }
+  });
+
+  allClassData[className] = Object.entries(users).map(([name, u]) => ({
+    name,
+    events: u.events.sort((a, b) => a.ts - b.ts),
+    tasks: Array.from(u.tasks),
+    answeredTasks: Array.from(u.answeredTasks)
+  }));
+}
+
+function parseDateTimeParts(timeStr) {
+  try {
+    const txt = String(timeStr).trim();
+    let m = txt.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4}),?\s+(\d{1,2}):(\d{2})(?::(\d{2}))?$/);
+
+    if (m) {
+      const dd = m[1].padStart(2, '0');
+      const mm = m[2].padStart(2, '0');
+      const yyyy = m[3];
+      const hh = parseInt(m[4], 10);
+      const mi = parseInt(m[5], 10);
+      const ss = parseInt(m[6] || '0', 10);
+      return {
+        dateKey: `${yyyy}-${mm}-${dd}`,
+        minutes: hh * 60 + mi + ss / 60,
+        ts: Date.UTC(parseInt(yyyy, 10), parseInt(mm, 10) - 1, parseInt(dd, 10), hh, mi, ss)
+      };
     }
 
-    function extractTaskName(description) {
-      if (!description) return '';
-      const text = String(description).trim();
+    const d = new Date(txt);
+    if (isNaN(d)) return null;
 
-      const quiz = text.match(/quiz|attempt|module id\s*\d+/i);
-      if (quiz) return text.slice(0, 80);
+    const yyyy = String(d.getFullYear());
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
+    const dd = String(d.getDate()).padStart(2, '0');
+    return {
+      dateKey: `${yyyy}-${mm}-${dd}`,
+      minutes: d.getHours() * 60 + d.getMinutes() + d.getSeconds() / 60,
+      ts: d.getTime()
+    };
+  } catch {
+    return null;
+  }
+}
 
-      return text ? text.slice(0, 80) : '';
+function extractTaskName(description) {
+  if (!description) return '';
+  const text = String(description).trim();
+  const quiz = text.match(/quiz|attempt|module id\s*\d+/i);
+  if (quiz) return text.slice(0, 80);
+  return text ? text.slice(0, 80) : '';
+}
+
+function buildRanges(events) {
+  const minutes = events.map(ev => ev.minutes).sort((a, b) => a - b);
+  const ranges = [];
+
+  if (!minutes.length) return ranges;
+
+  let start = minutes[0];
+  let last = minutes[0];
+
+  for (let i = 1; i < minutes.length; i++) {
+    if (minutes[i] - last > GAP_MINUTES) {
+      ranges.push([start, last]);
+      start = minutes[i];
     }
+    last = minutes[i];
+  }
 
-    function updateClassSelector(preferredClass = '') {
-      const classNames = Object.keys(allClassData);
-      classSelector.innerHTML = '';
+  ranges.push([start, last]);
+  return ranges;
+}
 
-      if (!classNames.length) {
-        classSelector.innerHTML = '<option value="">המתן להעלאה...</option>';
-        classSelector.disabled = true;
-        renderTable([]);
-        renderStats([]);
-        emptyState.style.display = 'block';
-        return;
-      }
+function updateClassSelector(preferredClass = '') {
+  const classNames = Object.keys(allClassData);
+  classSelector.innerHTML = '';
 
-      classNames.forEach(name => {
-        const opt = document.createElement('option');
-        opt.value = name;
-        opt.textContent = name;
-        classSelector.appendChild(opt);
-      });
+  if (!classNames.length) {
+    classSelector.innerHTML = '<option value="">המתן להעלאה...</option>';
+    classSelector.disabled = true;
+    renderTable([]);
+    renderStats([]);
+    emptyState.style.display = 'block';
+    return;
+  }
 
-      classSelector.disabled = false;
-      classSelector.value = (preferredClass && allClassData[preferredClass]) ? preferredClass : classNames[0];
-      updateView();
-    }
+  classNames.forEach(name => {
+    const opt = document.createElement('option');
+    opt.value = name;
+    opt.textContent = name;
+    classSelector.appendChild(opt);
+  });
 
-    function updateView() {
-      filterTable();
-    }
+  classSelector.disabled = false;
+  classSelector.value = (preferredClass && allClassData[preferredClass]) ? preferredClass : classNames[0];
+  updateView();
+}
 
-    function filterTable() {
-      const className = classSelector.value;
-      const classUsers = allClassData[className] || [];
-      const search = searchName.value.toLowerCase().trim();
-      const tf = timeFilter.value;
+function updateSpaceTitle() {
+  const el = document.getElementById('spaceTitle');
+  const className = classSelector.value || '—';
+  if (el) el.textContent = 'מרחב נוכחי: ' + className;
+}
 
-      const filtered = classUsers.filter(u =>
-        u.name.toLowerCase().includes(search) &&
-        (tf === 'all' || (tf === 'low' ? u.netTime < 20 : u.netTime >= 20))
-      );
+function updateDateFilter() {
+  const className = classSelector.value;
+  const classUsers = allClassData[className] || [];
+  const dates = [...new Set(classUsers.flatMap(u => (u.events || []).map(ev => ev.dateKey)))].sort();
 
-      renderTable(filtered);
-      renderStats(filtered);
-    }
+  if (!dates.length) {
+    dateFilter.value = '';
+    dateFilter.min = '';
+    dateFilter.max = '';
+    return;
+  }
 
-    function renderTable(users) {
-      const tbody = document.getElementById('tableBody');
-      tbody.innerHTML = '';
+  dateFilter.min = dates[0];
+  dateFilter.max = dates[dates.length - 1];
 
-      if (!users.length) {
-        tbody.innerHTML = '<tr><td colspan="5">לא נמצאו נתונים להצגה.</td></tr>';
-        return;
-      }
+  if (!dateFilter.value || !dates.includes(dateFilter.value)) {
+    dateFilter.value = dates[dates.length - 1];
+  }
+}
 
-      users.forEach((u, i) => {
-        const row = document.createElement('tr');
-        row.innerHTML = `
-          <td>${i + 1}</td>
-          <td><strong>${escapeHtml(u.name)}</strong></td>
-          <td>${u.ranges.map(r => `<span class="badge">${fmt(r[0])}-${fmt(r[1])}</span>`).join(' ')}</td>
-          <td><strong>${fmtDuration(u.netTime)}</strong></td>
-          <td><span class="clickable" onclick="toggleTasks('t-${i}')">${u.answeredTasks.length} משימות</span></td>
-        `;
-        tbody.appendChild(row);
+function updateView() {
+  updateSpaceTitle();
+  updateDateFilter();
+  filterTable();
+}
 
-        const ex = document.createElement('tr');
-        ex.id = `t-${i}`;
-        ex.className = 'expand-row';
-        ex.innerHTML = `
-          <td colspan="5">
-            <div style="padding:8px 0">
-              ${u.answeredTasks.length ? u.answeredTasks.map(t => `<span class="badge">${escapeHtml(t)}</span>`).join(' ') : 'אין משימות שנענו'}
-            </div>
-          </td>
-        `;
-        tbody.appendChild(ex);
-      });
-    }
+function filterTable() {
+  const className = classSelector.value;
+  const classUsers = allClassData[className] || [];
+  const search = searchName.value.toLowerCase().trim();
+  const selectedDate = dateFilter.value;
 
-    function renderStats(users) {
-      document.getElementById('statStudents').textContent = users.length;
-      const avg = users.length ? users.reduce((a,b)=>a+b.netTime,0) / users.length : 0;
-      document.getElementById('statAvgTime').textContent = fmtDuration(avg);
-      document.getElementById('statLowTime').textContent = users.filter(u => u.netTime < 20).length;
-    }
+  const filtered = classUsers
+    .map(u => {
+      const dayEvents = (u.events || []).filter(ev => !selectedDate || ev.dateKey === selectedDate);
+      const ranges = buildRanges(dayEvents);
+      const netTime = ranges.reduce((acc, [s, e]) => acc + (e - s), 0);
+      return { ...u, dayEvents, ranges, netTime };
+    })
+    .filter(u => u.name.toLowerCase().includes(search) && u.dayEvents.length > 0)
+    .sort((a, b) => b.netTime - a.netTime || a.name.localeCompare(b.name, 'he'));
 
-    function fmt(totalMinutes) {
-      const h = Math.floor(totalMinutes / 60);
-      const m = Math.floor(totalMinutes % 60).toString().padStart(2,'0');
-      return `${h}:${m}`;
-    }
+  renderTable(filtered);
+  renderStats(filtered);
+  emptyState.style.display = filtered.length ? 'none' : 'block';
+}
 
-    function fmtDuration(totalMinutes) {
-      const h = Math.floor(totalMinutes / 60);
-      const m = Math.round(totalMinutes % 60).toString().padStart(2,'0');
-      return `${h}:${m}`;
-    }
+function renderTable(users) {
+  const tbody = document.getElementById('tableBody');
+  tbody.innerHTML = '';
 
-    function toggleTasks(id) {
-      document.getElementById(id)?.classList.toggle('active');
-    }
+  if (!users.length) {
+    tbody.innerHTML = '<tr><td colspan="5">לא נמצאו נתונים להצגה בתאריך שנבחר.</td></tr>';
+    return;
+  }
 
-    function escapeHtml(str) {
-      return String(str)
-        .replaceAll('&','&amp;')
-        .replaceAll('<','&lt;')
-        .replaceAll('>','&gt;')
-        .replaceAll('"','&quot;')
-        .replaceAll("'","&#39;");
-    }
-  </script>
+  users.forEach((u, i) => {
+    const row = document.createElement('tr');
+    row.innerHTML = `
+      <td>${i + 1}</td>
+      <td><strong>${escapeHtml(u.name)}</strong></td>
+      <td><span class="clickable" onclick="toggleTasks('t-${i}')">${u.ranges.length} טווחים</span></td>
+      <td><strong>${fmtDuration(u.netTime)}</strong></td>
+      <td><span class="clickable" onclick="toggleTasks('t-${i}')">${u.answeredTasks.length} משימות</span></td>
+    `;
+    tbody.appendChild(row);
+
+    const ex = document.createElement('tr');
+    ex.id = `t-${i}`;
+    ex.className = 'expand-row';
+    ex.innerHTML = `
+      <td colspan="5">
+        <div style="padding:8px 0">
+          <div style="margin-bottom:10px"><strong>תאריך:</strong> ${escapeHtml(formatDateLabel(dateFilter.value))}</div>
+          <div style="margin-bottom:10px">
+            <strong>טווחי זמן:</strong>
+            ${u.ranges.length ? u.ranges.map(r => `<span class="badge">${fmt(r[0])}-${fmt(r[1])}</span>`).join(' ') : 'אין טווחים'}
+          </div>
+          <div>
+            <strong>משימות שנענו:</strong>
+            ${u.answeredTasks.length ? u.answeredTasks.map(t => `<span class="badge">${escapeHtml(t)}</span>`).join(' ') : 'אין משימות שנענו'}
+          </div>
+        </div>
+      </td>
+    `;
+    tbody.appendChild(ex);
+  });
+}
+
+function renderStats(users) {
+  document.getElementById('statStudents').textContent = users.length;
+  const avg = users.length ? users.reduce((a, b) => a + b.netTime, 0) / users.length : 0;
+  document.getElementById('statAvgTime').textContent = fmtDuration(avg);
+  document.getElementById('statLowTime').textContent = users.reduce((sum, u) => sum + u.ranges.length, 0);
+}
+
+function fmt(totalMinutes) {
+  const h = Math.floor(totalMinutes / 60);
+  const m = Math.floor(totalMinutes % 60).toString().padStart(2, '0');
+  return `${h}:${m}`;
+}
+
+function fmtDuration(totalMinutes) {
+  const safe = Math.max(0, totalMinutes || 0);
+  const h = Math.floor(safe / 60);
+  const m = Math.round(safe % 60).toString().padStart(2, '0');
+  return `${h}:${m}`;
+}
+
+function formatDateLabel(dateKey) {
+  if (!dateKey || !dateKey.includes('-')) return '—';
+  const [y, m, d] = dateKey.split('-');
+  return `${d}/${m}/${y}`;
+}
+
+function toggleTasks(id) {
+  document.getElementById(id)?.classList.toggle('active');
+}
+
+function escapeHtml(str) {
+  return String(str)
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#39;');
+}
+</script>
 </body>
 </html>
+
 
 
 
