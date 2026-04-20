@@ -449,7 +449,7 @@ function renderTable(users) {
       <td><strong>${escapeHtml(u.name)}</strong></td>
       <td><span class="clickable" onclick="toggleTasks('t-${i}')">${u.ranges.length} טווחים</span></td>
       <td><strong>${fmtDuration(u.netTime)}</strong></td>
-      <td><span class="clickable" onclick="toggleTasks('t-${i}')">${u.answeredTasks.length} משימות</span></td>
+      <td><span class="clickable" onclick="toggleTasks('t-${i}')">${u.dayAnsweredTasks.length} משימות</span></td>
     `;
     tbody.appendChild(row);
 
@@ -459,14 +459,14 @@ function renderTable(users) {
     ex.innerHTML = `
       <td colspan="5">
         <div style="padding:8px 0">
-          <div style="margin-bottom:10px"><strong>תאריך:</strong> ${escapeHtml(formatDateLabel(dateFilter.value))}</div>
+          <div style="margin-bottom:10px"><strong>תאריך:</strong> ${escapeHtml(formatDateLabel(dateFilter.value))} | <strong>שעות:</strong> ${escapeHtml(timeFrom.value || '00:00')}-${escapeHtml(timeTo.value || '23:59')}</div>
           <div style="margin-bottom:10px">
             <strong>טווחי זמן:</strong>
             ${u.ranges.length ? u.ranges.map(r => `<span class="badge">${fmt(r[0])}-${fmt(r[1])}</span>`).join(' ') : 'אין טווחים'}
           </div>
           <div>
             <strong>משימות שנענו:</strong>
-            ${u.answeredTasks.length ? u.answeredTasks.map(t => `<span class="badge">${escapeHtml(t)}</span>`).join(' ') : 'אין משימות שנענו'}
+            ${u.dayAnsweredTasks.length ? u.dayAnsweredTasks.map(t => `<span class="badge">${escapeHtml(t.name)}</span>`).join(' ') : 'אין משימות שנענו'}
           </div>
         </div>
       </td>
@@ -516,6 +516,7 @@ function escapeHtml(str) {
 </script>
 </body>
 </html>
+
 
 
 
