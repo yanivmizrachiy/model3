@@ -189,9 +189,43 @@
       const users = {};
 
       data.forEach(row => {
-        const userId = row['User full name'] || row['User ID'] || row['Affected user'] || row['Student'] || '';
-        const timeStr = row['Time'] || row['Date'] || '';
-        const description = row['Description'] || row['Event name'] || row['Component'] || '';
+        const userId = String(
+          row['שם מלא'] ||
+          row['משתמש מושפע'] ||
+          row['User full name'] ||
+          row['Affected user'] ||
+          row['Student'] ||
+          ''
+        ).trim();
+
+        const timeStr = String(
+          row['זמן'] ||
+          row['Time'] ||
+          row['Date'] ||
+          ''
+        ).trim();
+
+        const description = String(
+          row['תיאור'] ||
+          row['Description'] ||
+          row['שם האירוע'] ||
+          row['Event name'] ||
+          row['רכיב'] ||
+          row['Component'] ||
+          ''
+        ).trim();
+
+        const eventName = String(
+          row['שם האירוע'] ||
+          row['Event name'] ||
+          ''
+        ).trim();
+
+        const contextName = String(
+          row['הארוע מתייחס ל:'] ||
+          row['Event context'] ||
+          ''
+        ).trim();
 
         if (!userId || !timeStr) return;
 
@@ -204,11 +238,20 @@
 
         users[userId].times.push(parsedMinutes);
 
-        const taskName = extractTaskName(description);
+        const taskName = contextName || extractTaskName(description);
         if (taskName) users[userId].tasks.add(taskName);
-      });
 
-      allClassData[className] = Object.entries(users).map(([name, u]) => {
+        if (
+          contextName &&
+          (
+            /Quiz attempt updated/i.test(eventName) ||
+            /ניסיון המענה על הבוחן הוגש/.test(eventName) ||
+            /שמירה אוטומטית של ניסיון מענה/.test(eventName)
+          )
+        ) {
+          users[userId].answeredTasks.add(contextName);
+        }
+      });allClassData[className] = Object.entries(users).map(([name, u]) => {
         u.times.sort((a,b)=>a-b);
 
         const ranges = [];
@@ -370,6 +413,7 @@
   </script>
 </body>
 </html>
+
 
 
 
